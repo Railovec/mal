@@ -1,7 +1,7 @@
 {
-  "name": "Zápisník — príprava na medicínu",
-  "short_name": "Zápisník",
-  "description": "Offline príprava na prijímačky z biológie a chémie",
+  "name": "MUDrY — príprava na medicínu",
+  "short_name": "MUDrY",
+  "description": "Offline príprava na prijímačky z biológie a chémie UPJŠ",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
