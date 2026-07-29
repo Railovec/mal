@@ -943,6 +943,9 @@
 
     </div>
 
+    <input type="checkbox" id="hapticSwitch" switch tabindex="-1" aria-hidden="true"
+        style="position:fixed; top:-100px; left:-100px; width:1px; height:1px; opacity:0; pointer-events:none;">
+
     <script>
         /* ============ DATA LAYER ============ */
         // Otázky sa načítavajú primárne z questions-data.js (window.QUESTIONS_DATA), ktorý
@@ -1456,7 +1459,14 @@ function renderQuizQuestion(){
 }
 
 function vibrate(ms){
+  // Android / Chrome a pod.: štandardné Vibration API.
   if(navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} }
+  // iOS Safari nemá navigator.vibrate vôbec (Apple ho v WebKite nikdy
+  // neimplementoval). Od iOS 18 ale vie vydať krátke haptické cvaknutie
+  // natívny prepínač <input type="checkbox" switch">, keď sa prepne v rámci
+  // reálneho klikacieho gesta — presne to tu robíme namiesto neho.
+  const sw = document.getElementById('hapticSwitch');
+  if(sw){ try{ sw.click(); }catch(e){} }
 }
 
 function toggleOption(el){
