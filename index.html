@@ -1455,9 +1455,14 @@ function renderQuizQuestion(){
   document.getElementById('quizNextBtn').style.display = 'none';
 }
 
+function vibrate(ms){
+  if(navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} }
+}
+
 function toggleOption(el){
   if(quizSession.answered) return;
   const letter = el.dataset.letter;
+  vibrate(15);
   if(quizSession.selected.has(letter)){
     quizSession.selected.delete(letter);
     el.classList.remove('checked');
@@ -1470,6 +1475,7 @@ function toggleOption(el){
 function checkAnswer(){
   const s = quizSession;
   if(s.answered) return;
+  vibrate(25);
   // 0 označených možností je platná odpoveď — znamená "žiadna z ponúknutých
   // možností nie je správna" (rovnako ako keď na ostrej skúške nevyplníš nič).
   s.answered = true;
