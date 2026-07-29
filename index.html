@@ -174,6 +174,8 @@
             border: none;
             cursor: pointer;
             width: 100%;
+            -webkit-user-select: none;
+            user-select: none;
             transition: .15s;
         }
         
@@ -391,6 +393,8 @@
             cursor: pointer;
             line-height: 1.4;
             transition: .12s;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
         .opt:active {
@@ -809,7 +813,7 @@
                     </div>
                 </div>
                 <div class="btn-row">
-                    <button class="btn btn-amber" id="quizCheckBtn" onclick="checkAnswer()">Skontrolovať odpoveď</button>
+                    <label class="btn btn-amber" id="quizCheckBtn" for="hapticSwitch" onclick="checkAnswer()" style="cursor:pointer;">Skontrolovať odpoveď</label>
                     <button class="btn btn-primary" id="quizNextBtn" onclick="nextQuestion()" style="display:none;">Ďalšia otázka</button>
                 </div>
             </section>
@@ -1444,10 +1448,10 @@ function renderQuizQuestion(){
 
   const optWrap = document.getElementById('quizOptions');
   optWrap.innerHTML = q.options.map(opt=>`
-    <div class="opt" data-letter="${opt.letter}">
+    <label class="opt" for="hapticSwitch" data-letter="${opt.letter}">
       <div class="box">${opt.letter}</div>
       <div>${opt.image ? `<img src="${opt.image}" alt="Možnosť ${opt.letter}" style="max-width:100%; border-radius:6px; display:block;">` : (opt.text || '')}</div>
-    </div>
+    </label>
   `).join('');
   optWrap.querySelectorAll('.opt').forEach(el=>{
     el.onclick = ()=> toggleOption(el);
@@ -1461,12 +1465,11 @@ function renderQuizQuestion(){
 function vibrate(ms){
   // Android / Chrome a pod.: štandardné Vibration API.
   if(navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} }
-  // iOS Safari nemá navigator.vibrate vôbec (Apple ho v WebKite nikdy
-  // neimplementoval). Od iOS 18 ale vie vydať krátke haptické cvaknutie
-  // natívny prepínač <input type="checkbox" switch">, keď sa prepne v rámci
-  // reálneho klikacieho gesta — presne to tu robíme namiesto neho.
-  const sw = document.getElementById('hapticSwitch');
-  if(sw){ try{ sw.click(); }catch(e){} }
+  // iOS Safari nemá navigator.vibrate vôbec. Haptiku tam preto vyvolávajú
+  // priamo prvky možností a tlačidlo "Skontrolovať" — sú to <label for="hapticSwitch">,
+  // takže samotný reálny ťuk naň natívne prepne skrytý <input type="checkbox" switch">,
+  // čo na iOS 18+ vyvolá krátke haptické cvaknutie. (Synteticky volané .click() z JS
+  // toto na iOS nevyvolá — musí ísť o skutočné používateľské ťuknutie na label.)
 }
 
 function toggleOption(el){
