@@ -313,6 +313,7 @@
 
         
         input[type=number],
+        input[type=text],
         textarea {
             width: 100%;
             padding: 12px 14px;
@@ -749,16 +750,14 @@
                             <div class="section-col-title">Chémia</div>
                             <div class="chip-row chip-col-scroll" id="sectionChipsChem"></div>
                             <div id="customRangeRowChem" class="custom-range-row" style="display:none;">
-                                <input type="number" id="rangeFromChemInput" min="1" placeholder="Od čísla">
-                                <input type="number" id="rangeToChemInput" min="1" placeholder="Po číslo">
+                                <input type="text" id="rangeListChemInput" placeholder="napr. 1,5,10-15">
                             </div>
                         </div>
                         <div class="section-col">
                             <div class="section-col-title">Biológia</div>
                             <div class="chip-row chip-col-scroll" id="sectionChipsBio"></div>
                             <div id="customRangeRowBio" class="custom-range-row" style="display:none;">
-                                <input type="number" id="rangeFromBioInput" min="1" placeholder="Od čísla">
-                                <input type="number" id="rangeToBioInput" min="1" placeholder="Po číslo">
+                                <input type="text" id="rangeListBioInput" placeholder="napr. 1,5,10-15">
                             </div>
                         </div>
                     </div>
@@ -771,6 +770,10 @@
                         <div class="chip" data-count="12">12</div>
                         <div class="chip" data-count="20">20</div>
                         <div class="chip" data-count="9999">Všetky</div>
+                        <div class="chip" data-count="custom">Vlastné</div>
+                    </div>
+                    <div id="customCountRow" class="custom-range-row" style="display:none;">
+                        <input type="number" id="customCountInput" min="1" placeholder="Zadaj počet otázok">
                     </div>
                 </div>
 
@@ -791,6 +794,14 @@
                     </div>
                 </div>
 
+                <div class="field">
+                    <label>Možnosti v otázke</label>
+                    <div class="chip-row" id="optionsModeChips">
+                        <div class="chip" data-optmode="full">Všetky možnosti</div>
+                        <div class="chip" data-optmode="random4">Náhodné 4 (ako ostrý test)</div>
+                    </div>
+                </div>
+
                 <button class="btn btn-amber" id="startQuizBtn" onclick="startQuiz()">Generovať test</button>
             </section>
 
@@ -798,7 +809,7 @@
             <section class="view" id="view-quiz">
                 <div class="quiz-progress">
                     <span id="quizPos">Otázka 1 / 10</span>
-                    <span id="quizTimer" style="display:none; font-weight:700;"></span>
+                    <span id="quizTimer" style="font-weight:700;"></span>
                     <span id="quizCatLabel"></span>
                 </div>
                 <div class="quiz-card">
@@ -831,7 +842,8 @@
                         <div class="pct-lbl">úspešnosť</div>
                     </div>
                 </div>
-                <div style="text-align:center; font-family:var(--mono); font-size:13px; opacity:.7; margin-top:-8px; margin-bottom:16px;">Body: <span id="summaryPoints">0 / 0</span></div>
+                <div style="text-align:center; font-family:var(--mono); font-size:13px; opacity:.7; margin-top:-8px; margin-bottom:4px;">Body: <span id="summaryPoints">0 / 0</span></div>
+                <div style="text-align:center; font-family:var(--mono); font-size:13px; opacity:.7; margin-bottom:16px;">Čas: <span id="summaryTime">0:00</span></div>
                 <div id="summaryOstryBox" style="display:none;">
                     <div class="msg" id="summaryOstryBanner" style="text-align:center; font-weight:700; font-size:15px;"></div>
                     <div style="text-align:center; font-family:var(--mono); font-size:13px; opacity:.7; margin-top:6px; margin-bottom:6px;">Prepočítané na reálny test (200 otázok × 4 body): <span id="summaryOstryScaled">0 / 800</span></div>
@@ -920,6 +932,12 @@
                     </div>
                 </div>
                 <div id="statsCats"></div>
+
+                <div class="field" style="margin-top:26px; border-top:1px solid var(--line); padding-top:18px;">
+                    <label>Appka</label>
+                    <button class="btn btn-ghost" id="updateCheckBtn" onclick="checkForUpdates()">Skontrolovať aktualizácie</button>
+                    <p id="updateCheckMsg" style="font-size:12.5px; opacity:.65; margin:8px 0 0; line-height:1.5;">Appka funguje offline a otázky sa neťahajú zo siete znova pri každom otvorení — sem klikni, keď chceš ručne skontrolovať, či nie je k dispozícii nová verzia appky.</p>
+                </div>
             </section>
 
         </main>
@@ -1209,13 +1227,35 @@
         let setupState = {
             selectedSections: new Set(), // kľúče v tvare "chemia:atom", "biologia:custom", ...
             count: 12,
+            customCount: null, // vlastný počet otázok zadaný ako číslo (keď count==='custom')
             mode: 'all',
-            rangeFromBio: null,
-            rangeToBio: null,
-            rangeFromChem: null,
-            rangeToChem: null,
-            regime: 'test'
+            customListBio: '', // napr. "1,5,10-15" — vlastný výber otázok podľa čísla
+            customListChem: '',
+            regime: 'test',
+            optionsMode: 'full' // 'full' = všetky možnosti, 'random4' = vždy 4 náhodné (ako ostrý test)
         };
+
+        // Rozparsuje reťazec ako "1, 5, 10-15, 42" na množinu konkrétnych čísel.
+        // Neplatné/prázdne kúsky sa jednoducho ignorujú.
+        function parseNumberSelector(str) {
+            const set = new Set();
+            if (!str) return set;
+            String(str).split(',').forEach(part => {
+                part = part.trim();
+                if (!part) return;
+                const range = part.match(/^(\d+)\s*-\s*(\d+)$/);
+                if (range) {
+                    let a = parseInt(range[1], 10),
+                        b = parseInt(range[2], 10);
+                    if (a > b)[a, b] = [b, a];
+                    for (let i = a; i <= b; i++) set.add(i);
+                } else {
+                    const n = parseInt(part, 10);
+                    if (!isNaN(n)) set.add(n);
+                }
+            });
+            return set;
+        }
 
         function sectionKey(subject, id) {
             return subject + ':' + id;
@@ -1228,23 +1268,21 @@
             if (setupState.selectedSections.size === 0) return true;
             const customKey = sectionKey(q.subject, 'custom');
             if (setupState.selectedSections.has(customKey)) {
-                const from = q.subject === 'biologia' ? setupState.rangeFromBio : setupState.rangeFromChem;
-                const to = q.subject === 'biologia' ? setupState.rangeToBio : setupState.rangeToChem;
-                if (from !== null && to !== null && !isNaN(from) && !isNaN(to)) {
-                    if (q.id !== undefined && q.id >= Math.min(from, to) && q.id <= Math.max(from, to)) return true;
-                }
+                const listStr = q.subject === 'biologia' ? setupState.customListBio : setupState.customListChem;
+                const numberSet = parseNumberSelector(listStr);
+                if (numberSet.size && q.id !== undefined && numberSet.has(q.id)) return true;
             }
             return (q._sections || []).some(s => setupState.selectedSections.has(sectionKey(q.subject, s.id)));
         }
 
-        function renderSectionColumn(containerId, subject, sectionsList, fromKey, toKey, fromInputId, toInputId, customRowId) {
+        function renderSectionColumn(containerId, subject, sectionsList, listKey, listInputId, customRowId) {
             const wrap = document.getElementById(containerId);
             const options = sectionsList.map(s => {
                     const rangesLabel = s.ranges.map(([f, t]) => `${f}–${t}`).join(', ');
                     return [s.id, `${s.label} (${rangesLabel})`];
                 })
                 .concat([
-                    ['custom', 'Vlastný rozsah']
+                    ['custom', 'Vlastný výber podľa čísla']
                 ]);
             wrap.innerHTML = options.map(([id, label]) => {
                 const key = sectionKey(subject, id);
@@ -1264,28 +1302,29 @@
             const customRow = document.getElementById(customRowId);
             const customSelected = setupState.selectedSections.has(sectionKey(subject, 'custom'));
             customRow.style.display = customSelected ? 'flex' : 'none';
-            const fromInput = document.getElementById(fromInputId);
-            const toInput = document.getElementById(toInputId);
-            if (document.activeElement !== fromInput) fromInput.value = setupState[fromKey] === null ? '' : setupState[fromKey];
-            if (document.activeElement !== toInput) toInput.value = setupState[toKey] === null ? '' : setupState[toKey];
-            fromInput.oninput = () => {
-                setupState[fromKey] = fromInput.value === '' ? null : Number(fromInput.value);
-                document.getElementById('startQuizBtn').disabled = questions.length === 0;
-            };
-            toInput.oninput = () => {
-                setupState[toKey] = toInput.value === '' ? null : Number(toInput.value);
+            const listInput = document.getElementById(listInputId);
+            if (document.activeElement !== listInput) listInput.value = setupState[listKey] || '';
+            listInput.oninput = () => {
+                setupState[listKey] = listInput.value;
                 document.getElementById('startQuizBtn').disabled = questions.length === 0;
             };
         }
 
         function renderQuizSetup() {
-            renderSectionColumn('sectionChipsChem', 'chemia', SECTIONS_CHEM, 'rangeFromChem', 'rangeToChem', 'rangeFromChemInput', 'rangeToChemInput', 'customRangeRowChem');
-            renderSectionColumn('sectionChipsBio', 'biologia', SECTIONS_BIO, 'rangeFromBio', 'rangeToBio', 'rangeFromBioInput', 'rangeToBioInput', 'customRangeRowBio');
+            renderSectionColumn('sectionChipsChem', 'chemia', SECTIONS_CHEM, 'customListChem', 'rangeListChemInput', 'customRangeRowChem');
+            renderSectionColumn('sectionChipsBio', 'biologia', SECTIONS_BIO, 'customListBio', 'rangeListBioInput', 'customRangeRowBio');
 
   document.querySelectorAll('#countChips .chip').forEach(chip=>{
-    chip.classList.toggle('selected', Number(chip.dataset.count)===setupState.count);
-    chip.onclick = ()=>{ setupState.count = Number(chip.dataset.count); renderQuizSetup(); };
+    const isCustom = chip.dataset.count === 'custom';
+    chip.classList.toggle('selected', isCustom ? setupState.count==='custom' : Number(chip.dataset.count)===setupState.count);
+    chip.onclick = ()=>{ setupState.count = isCustom ? 'custom' : Number(chip.dataset.count); renderQuizSetup(); };
   });
+  document.getElementById('customCountRow').style.display = setupState.count==='custom' ? 'flex' : 'none';
+  const customCountInput = document.getElementById('customCountInput');
+  if(document.activeElement !== customCountInput) customCountInput.value = setupState.customCount===null ? '' : setupState.customCount;
+  customCountInput.oninput = ()=>{
+    setupState.customCount = customCountInput.value==='' ? null : Math.max(1, parseInt(customCountInput.value,10) || 1);
+  };
   document.querySelectorAll('#modeChips .chip').forEach(chip=>{
     chip.classList.toggle('selected', chip.dataset.mode===setupState.mode);
     chip.onclick = ()=>{ setupState.mode = chip.dataset.mode; renderQuizSetup(); };
@@ -1293,6 +1332,10 @@
   document.querySelectorAll('#regimeChips .chip').forEach(chip=>{
     chip.classList.toggle('selected', chip.dataset.regime===setupState.regime);
     chip.onclick = ()=>{ setupState.regime = chip.dataset.regime; renderQuizSetup(); };
+  });
+  document.querySelectorAll('#optionsModeChips .chip').forEach(chip=>{
+    chip.classList.toggle('selected', chip.dataset.optmode===setupState.optionsMode);
+    chip.onclick = ()=>{ setupState.optionsMode = chip.dataset.optmode; renderQuizSetup(); };
   });
 
   document.getElementById('startQuizBtn').disabled = questions.length===0;
@@ -1334,16 +1377,22 @@ function startQuiz(){
     alert('Žiadne otázky nezodpovedajú výberu. Skús iný režim alebo predmet.');
     return;
   }
+  const effectiveCount = setupState.count==='custom' ? (setupState.customCount || 9999) : setupState.count;
   if(setupState.regime==='ucenie'){
     // Učenie: otázky idú od najmenšieho čísla po najväčšie, bez preskupovania
-    pool = pool.slice().sort((a,b)=> (a.id||0)-(b.id||0)).slice(0, setupState.count);
+    pool = pool.slice().sort((a,b)=> (a.id||0)-(b.id||0)).slice(0, effectiveCount);
   } else {
     // Test: náhodné poradie, otázky na seba nenadväzujú
-    pool = shuffle(pool).slice(0, setupState.count);
+    pool = shuffle(pool).slice(0, effectiveCount);
   }
-  quizSession = { items: pool, idx:0, correct:0, wrong:0, points:0, maxPoints:0, answered:false, selected:new Set() };
+  if(setupState.optionsMode==='random4'){
+    // Rovnako ako v ostrom teste: z každej otázky sa vytiahnu len 4 náhodné možnosti.
+    pool = pool.map(q => pickRandomOptionsSubset(q, 4));
+  }
+  quizSession = { items: pool, idx:0, correct:0, wrong:0, points:0, maxPoints:0, answered:false, selected:new Set(), startTs: Date.now(), timerInterval:null };
   goTo('quiz');
   renderQuizQuestion();
+  startQuizTimer();
 }
 
 // Z pôvodnej otázky (zvyčajne 8 možností) vyberie 4 náhodné možnosti a
@@ -1391,37 +1440,53 @@ function startOstryTest(){
     items: pool, idx:0, correct:0, wrong:0,
     points:0, maxPoints: pool.length*4, // pevne dané vopred, aj nezodpovedané otázky sa počítajú do menovateľa
     answered:false, selected:new Set(),
-    isOstry:true, deadlineTs: Date.now() + 150*60*1000, timerInterval:null
+    isOstry:true, deadlineTs: Date.now() + 150*60*1000, startTs: Date.now(), timerInterval:null
   };
   goTo('quiz');
   renderQuizQuestion();
-  startOstryTimer();
+  startQuizTimer();
 }
 
-function startOstryTimer(){
-  updateOstryTimerDisplay();
+// Spoločný časovač pre oba typy testov. Pri ostrom teste ide o odpočítavanie
+// do limitu 150 minút (rovnaké správanie ako predtým), pri bežnom teste ide
+// o stopky, ktoré rátajú od 0 nahor — celkový čas sa potom zobrazí aj vo
+// vyhodnotení testu spolu s percentom a bodmi.
+function startQuizTimer(){
+  updateQuizTimerDisplay();
   quizSession.timerInterval = setInterval(()=>{
-    if(!quizSession || !quizSession.isOstry){ clearInterval(quizSession && quizSession.timerInterval); return; }
-    if(quizSession.deadlineTs - Date.now() <= 0){
+    if(!quizSession){ return; }
+    if(quizSession.isOstry && quizSession.deadlineTs - Date.now() <= 0){
       clearInterval(quizSession.timerInterval);
-      updateOstryTimerDisplay();
+      updateQuizTimerDisplay();
       alert('Čas na ostrý test vypršal (150 minút). Test sa vyhodnotí s doterajšími odpoveďami.');
       finishQuiz();
       return;
     }
-    updateOstryTimerDisplay();
+    updateQuizTimerDisplay();
   }, 1000);
 }
 
-function updateOstryTimerDisplay(){
-  const el = document.getElementById('quizTimer');
-  if(!el || !quizSession || !quizSession.isOstry) return;
-  const remaining = Math.max(0, quizSession.deadlineTs - Date.now());
-  const mm = Math.floor(remaining/60000);
-  const ss = Math.floor((remaining%60000)/1000);
-  el.textContent = `⏱ ${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
-  el.style.color = remaining < 10*60*1000 ? 'var(--bad)' : '';
+function formatMMSS(ms){
+  const total = Math.max(0, Math.floor(ms/1000));
+  const mm = Math.floor(total/60);
+  const ss = total%60;
+  return `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
 }
+
+function updateQuizTimerDisplay(){
+  const el = document.getElementById('quizTimer');
+  if(!el || !quizSession) return;
+  if(quizSession.isOstry){
+    const remaining = Math.max(0, quizSession.deadlineTs - Date.now());
+    el.textContent = `⏱ ${formatMMSS(remaining)}`;
+    el.style.color = remaining < 10*60*1000 ? 'var(--bad)' : '';
+  } else {
+    const elapsed = Date.now() - quizSession.startTs;
+    el.textContent = `⏱ ${formatMMSS(elapsed)}`;
+    el.style.color = '';
+  }
+}
+
 
 function renderQuizQuestion(){
   const s = quizSession;
@@ -1431,7 +1496,7 @@ function renderQuizQuestion(){
 
   document.getElementById('quizPos').textContent = `Otázka ${s.idx+1} / ${s.items.length}`;
   document.getElementById('quizCatLabel').textContent = q._section ? q._section.label : '';
-  document.getElementById('quizTimer').style.display = s.isOstry ? 'inline' : 'none';
+  document.getElementById('quizTimer').style.display = 'inline';
   document.getElementById('quizQCat').textContent = (q.subject==='biologia'?'Biológia':'Chémia') + ' · #' + q.id;
   document.getElementById('quizQText').textContent = q.question || (q.question_image ? '(zadanie je na obrázku nižšie)' : '');
   const qImg = document.getElementById('quizQImage');
@@ -1561,16 +1626,18 @@ function nextQuestion(){
 function finishQuiz(){
   const s = quizSession;
   if(s.timerInterval) clearInterval(s.timerInterval);
+  s.elapsedMs = Date.now() - s.startTs;
   const pct = s.maxPoints ? Math.round(s.points/s.maxPoints*100) : 0;
   const sessionSubjects = new Set(s.items.map(it=>it.subject));
   const subjectLabel = sessionSubjects.size>1 ? 'oboje' : (sessionSubjects.values().next().value || 'all');
-  history.push({ date: new Date().toISOString(), correct:s.correct, wrong:s.wrong, points:s.points, maxPoints:s.maxPoints, pct, subject:subjectLabel, isOstry: !!s.isOstry });
+  history.push({ date: new Date().toISOString(), correct:s.correct, wrong:s.wrong, points:s.points, maxPoints:s.maxPoints, pct, subject:subjectLabel, isOstry: !!s.isOstry, timeMs: s.elapsedMs });
   saveHistory(history);
 
   document.getElementById('summaryCorrect').textContent = s.correct;
   document.getElementById('summaryWrong').textContent = s.wrong;
   document.getElementById('summaryPoints').textContent = `${s.points} / ${s.maxPoints}`;
   document.getElementById('summaryPct').textContent = pct + '%';
+  document.getElementById('summaryTime').textContent = formatMMSS(s.elapsedMs);
 
   const ostryBox = document.getElementById('summaryOstryBox');
   if(s.isOstry){
@@ -1767,10 +1834,85 @@ function renderStats(){
 renderHome();
 renderQuizSetup();
 
+// Service worker: appka funguje offline vďaka cache-first stratégii (šetrí
+// mobilné dáta — otázky sa neťahajú zo siete pri každom otvorení). Kontrolu
+// aktualizácie preto appka nerobí automaticky na pozadí, ale len na
+// vyžiadanie — tlačidlom "Skontrolovať aktualizácie" v sekcii Štatistiky
+// (funkcia checkForUpdates nižšie).
+let swRegistration = null;
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+    // updateViaCache:'none' donúti prehliadač nekešovať samotný súbor
+    // service-worker.js na HTTP úrovni — inak by manuálna kontrola vyššie
+    // niekedy vôbec nezbadala novú verziu (typický problém na Safari/iOS,
+    // kvôli ktorému bolo predtým treba mazať dáta appky ručne).
+    navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' })
+      .then(reg => { swRegistration = reg; })
+      .catch(()=>{});
   });
+
+  // Keď nová verzia prevezme kontrolu, appku o tom šetrne informujeme —
+  // nerobíme automatický refresh, aby sa nestratil rozbehnutý test.
+  let swRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(swRefreshing) return;
+    showUpdateBanner();
+  });
+
+  function showUpdateBanner(){
+    if(document.getElementById('updateBanner')) return;
+    const bar = document.createElement('div');
+    bar.id = 'updateBanner';
+    bar.style.cssText = 'position:fixed; left:0; right:0; bottom:calc(70px + env(safe-area-inset-bottom) + 10px); z-index:40; display:flex; justify-content:center; padding:0 16px; pointer-events:none;';
+    bar.innerHTML = `<div style="pointer-events:auto; background:var(--ink); color:var(--paper); padding:10px 12px 10px 16px; border-radius:12px; font-size:13px; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow); max-width:100%;">
+      <span>Nová verzia appky je pripravená.</span>
+      <button id="updateBannerBtn" style="background:var(--amber); color:#fff; border:none; padding:7px 12px; border-radius:8px; font-weight:700; font-size:12.5px; white-space:nowrap; cursor:pointer;">Obnoviť</button>
+    </div>`;
+    document.body.appendChild(bar);
+    document.getElementById('updateBannerBtn').onclick = ()=>{
+      swRefreshing = true;
+      location.reload();
+    };
+  }
+}
+
+// Manuálna kontrola aktualizácie appky — volá sa tlačidlom v sekcii
+// Štatistiky. Zisťuje, či nie je na serveri nová verzia service workera
+// (malý súbor), a ak áno, nechá ho nainštalovať sa; keď prevezme kontrolu,
+// zobrazí sa banner "Obnoviť" (viď vyššie). Toto je jediný moment, kedy
+// appka čokoľvek kontroluje/sťahuje zo siete navyše — žiadne automatické
+// kontroly na pozadí, aby appka zbytočne neťahala mobilné dáta.
+async function checkForUpdates(){
+  const btn = document.getElementById('updateCheckBtn');
+  const msgEl = document.getElementById('updateCheckMsg');
+  if(!('serviceWorker' in navigator)){
+    msgEl.textContent = 'Tento prehliadač nepodporuje aktualizácie na pozadí.';
+    return;
+  }
+  btn.disabled = true;
+  msgEl.textContent = 'Kontrolujem aktualizácie…';
+  let foundUpdate = false;
+  try{
+    const reg = swRegistration || await navigator.serviceWorker.getRegistration();
+    if(!reg){
+      msgEl.textContent = 'Offline režim appky sa ešte nenainštaloval — skús to znova o chvíľu.';
+      btn.disabled = false;
+      return;
+    }
+    const onUpdateFound = ()=>{ foundUpdate = true; };
+    reg.addEventListener('updatefound', onUpdateFound);
+    await reg.update();
+    // Daj chvíľu na stiahnutie a nainštalovanie prípadnej novej verzie.
+    await new Promise(r=>setTimeout(r, 1500));
+    reg.removeEventListener('updatefound', onUpdateFound);
+    msgEl.textContent = foundUpdate
+      ? 'Nájdená nová verzia — sťahuje sa. Keď bude pripravená, appka to oznámi tlačidlom "Obnoviť" dole na obrazovke.'
+      : 'Appka je aktuálna, žiadna nová verzia nie je k dispozícii.';
+  } catch(e){
+    msgEl.textContent = 'Kontrolu sa nepodarilo dokončiť — skontroluj internetové pripojenie a skús znova.';
+  } finally {
+    btn.disabled = false;
+  }
 }
     </script>
 </body>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zapisnik-cache-v3';
+const CACHE_NAME = 'zapisnik-cache-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -517,15 +517,24 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Cache-first pre všetko — appka sa neťahá zo siete pri každom otvorení
+// (šetrí mobilné dáta, najmä questions-data.js má cez 2 MB). Nová verzia sa
+// stiahne len vtedy, keď si to používateľ vyžiada tlačidlom "Skontrolovať
+// aktualizácie" v appke (v sekcii Štatistiky), alebo keď je nasadená nová
+// verzia s iným CACHE_NAME — vtedy sa pri inštalácii stiahnu všetky assety
+// nanovo, presne raz.
 self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
+    caches.match(request).then((cached) => {
       if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        // Cache same-origin GET responses for future offline use
-        if (event.request.method === 'GET' && response.ok && event.request.url.startsWith(self.location.origin)) {
+      return fetch(request).then((response) => {
+        if (response && response.ok && url.origin === self.location.origin) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
         return response;
       }).catch(() => cached);
