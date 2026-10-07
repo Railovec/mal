@@ -764,14 +764,6 @@
                 </div>
 
                 <div class="field">
-                    <label>Príklady v chémii (výpočtové úlohy, napr. 451–475 k téme 1–110)</label>
-                    <div class="chip-row" id="examplesChips">
-                        <div class="chip" data-examples="on">Zapnuté</div>
-                        <div class="chip" data-examples="off">Vypnuté</div>
-                    </div>
-                </div>
-
-                <div class="field">
                     <label>Počet otázok</label>
                     <div class="chip-row" id="countChips">
                         <div class="chip" data-count="8">8</div>
@@ -791,6 +783,7 @@
                         <div class="chip" data-mode="all">Zo všetkých</div>
                         <div class="chip" data-mode="wrong">Iba z nesprávnych</div>
                         <div class="chip" data-mode="unseen">Vynechať správne</div>
+                        <div class="chip" id="examplesChip" title="Chémia: príklady (výpočtové úlohy) k tematickým celkom, napr. 451–475">Vrátane príkladov (chémia)</div>
                     </div>
                 </div>
 
@@ -1349,10 +1342,9 @@
             renderSectionColumn('sectionChipsChem', 'chemia', SECTIONS_CHEM, 'customListChem', 'rangeListChemInput', 'customRangeRowChem');
             renderSectionColumn('sectionChipsBio', 'biologia', SECTIONS_BIO, 'customListBio', 'rangeListBioInput', 'customRangeRowBio');
 
-  document.querySelectorAll('#examplesChips .chip').forEach(chip=>{
-    chip.classList.toggle('selected', (chip.dataset.examples==='on')===setupState.includeExamples);
-    chip.onclick = ()=>{ setupState.includeExamples = chip.dataset.examples==='on'; saveIncludeExamples(setupState.includeExamples); renderQuizSetup(); };
-  });
+  const examplesChip = document.getElementById('examplesChip');
+  examplesChip.classList.toggle('selected', setupState.includeExamples);
+  examplesChip.onclick = ()=>{ setupState.includeExamples = !setupState.includeExamples; saveIncludeExamples(setupState.includeExamples); renderQuizSetup(); };
 
   document.querySelectorAll('#countChips .chip').forEach(chip=>{
     const isCustom = chip.dataset.count === 'custom';
@@ -1365,7 +1357,7 @@
   customCountInput.oninput = ()=>{
     setupState.customCount = customCountInput.value==='' ? null : Math.max(1, parseInt(customCountInput.value,10) || 1);
   };
-  document.querySelectorAll('#modeChips .chip').forEach(chip=>{
+  document.querySelectorAll('#modeChips .chip[data-mode]').forEach(chip=>{
     chip.classList.toggle('selected', chip.dataset.mode===setupState.mode);
     chip.onclick = ()=>{ setupState.mode = chip.dataset.mode; renderQuizSetup(); };
   });
