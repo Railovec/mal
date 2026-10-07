@@ -764,6 +764,14 @@
                 </div>
 
                 <div class="field">
+                    <label>Príklady v chémii (výpočtové úlohy, napr. 451–475 k téme 1–110)</label>
+                    <div class="chip-row" id="examplesChips">
+                        <div class="chip" data-examples="on">Zapnuté</div>
+                        <div class="chip" data-examples="off">Vypnuté</div>
+                    </div>
+                </div>
+
+                <div class="field">
                     <label>Počet otázok</label>
                     <div class="chip-row" id="countChips">
                         <div class="chip" data-count="8">8</div>
@@ -1233,6 +1241,7 @@
             customListBio: '', // napr. "1,5,10-15" — vlastný výber otázok podľa čísla
             customListChem: '',
             regime: 'test',
+            includeExamples: loadIncludeExamples(), // chémia: zahrnúť príklady (druhé rozsahy sekcií)? Predvolene áno.
             optionsMode: 'full' // 'full' = všetky možnosti, 'random4' = vždy 4 náhodné (ako ostrý test)
         };
 
@@ -1262,17 +1271,42 @@
             return subject + ':' + id;
         }
 
+        // Nastavenie "Príklady v chémii" sa pamätá medzi spusteniami (predvolene zapnuté).
+        function loadIncludeExamples() {
+            try {
+                return localStorage.getItem('quiz_include_examples') !== '0';
+            } catch (e) {
+                return true;
+            }
+        }
+
+        function saveIncludeExamples(v) {
+            try {
+                localStorage.setItem('quiz_include_examples', v ? '1' : '0');
+            } catch (e) {}
+        }
+
+        // Chemická otázka je "príklad", ak jej číslo patrí do niektorého DRUHÉHO
+        // (alebo ďalšieho) rozsahu niektorej sekcie — teda do doplnkových/výpočtových
+        // úloh (napr. 451–475 k téme 1–110).
+        function isChemExample(q) {
+            if (!q || q.subject !== 'chemia' || q.id === undefined || q.id === null) return false;
+            return SECTIONS_CHEM.some(s => s.ranges.slice(1).some(([from, to]) => q.id >= from && q.id <= to));
+        }
+
         // Otázka vyhovuje výberu, ak nie je vybraná žiadna sekcia (= zo všetkého),
         // alebo ak patrí pod aspoň jednu vybranú sekciu (naraz môžu byť vybrané
-        // sekcie z chémie aj biológie).
+        // sekcie z chémie aj biológie). Ak sú príklady vypnuté, chemické príklady
+        // sa vynechajú — okrem čísel, ktoré si výslovne zadáš vo "Vlastnom výbere".
         function questionMatchesSection(q) {
-            if (setupState.selectedSections.size === 0) return true;
             const customKey = sectionKey(q.subject, 'custom');
             if (setupState.selectedSections.has(customKey)) {
                 const listStr = q.subject === 'biologia' ? setupState.customListBio : setupState.customListChem;
                 const numberSet = parseNumberSelector(listStr);
                 if (numberSet.size && q.id !== undefined && numberSet.has(q.id)) return true;
             }
+            if (!setupState.includeExamples && isChemExample(q)) return false;
+            if (setupState.selectedSections.size === 0) return true;
             return (q._sections || []).some(s => setupState.selectedSections.has(sectionKey(q.subject, s.id)));
         }
 
@@ -1287,7 +1321,7 @@
                 ]);
             wrap.innerHTML = options.map(([id, label]) => {
                 const key = sectionKey(subject, id);
-                const count = id === 'custom' ? null : questions.filter(q => q.subject === subject && (q._sections || []).some(s => s.id === id)).length;
+                const count = id === 'custom' ? null : questions.filter(q => q.subject === subject && (q._sections || []).some(s => s.id === id) && (setupState.includeExamples || !isChemExample(q))).length;
                 const selected = setupState.selectedSections.has(key);
                 return `<div class="chip ${selected ? 'selected' : ''}" data-key="${key}">${label}${count !== null ? ` <span style="opacity:.6; font-family:var(--mono); font-size:11px;">(${count})</span>` : ''}</div>`;
             }).join('');
@@ -1314,6 +1348,11 @@
         function renderQuizSetup() {
             renderSectionColumn('sectionChipsChem', 'chemia', SECTIONS_CHEM, 'customListChem', 'rangeListChemInput', 'customRangeRowChem');
             renderSectionColumn('sectionChipsBio', 'biologia', SECTIONS_BIO, 'customListBio', 'rangeListBioInput', 'customRangeRowBio');
+
+  document.querySelectorAll('#examplesChips .chip').forEach(chip=>{
+    chip.classList.toggle('selected', (chip.dataset.examples==='on')===setupState.includeExamples);
+    chip.onclick = ()=>{ setupState.includeExamples = chip.dataset.examples==='on'; saveIncludeExamples(setupState.includeExamples); renderQuizSetup(); };
+  });
 
   document.querySelectorAll('#countChips .chip').forEach(chip=>{
     const isCustom = chip.dataset.count === 'custom';
