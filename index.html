@@ -40,6 +40,12 @@
             -webkit-tap-highlight-color: transparent;
         }
         
+        /* Vypne "potiahni dole pre obnovenie" (pull-to-refresh) na Androide.
+           Chrome ho riadi cez koreňový element, preto to musí byť aj na html. */
+        html {
+            overscroll-behavior-y: none;
+        }
+
         html,
         body {
             margin: 0;
@@ -1985,6 +1991,16 @@ async function renderAppVersion() {
     el.textContent = 'Verzia aplikácie: neznáma';
   }
 }
+
+// Poistka: ak by sa stránka počas rozbehnutého testu predsa len chcela obnoviť
+// alebo zavrieť (napr. nechtiac), prehliadač sa najprv opýta.
+window.addEventListener('beforeunload', (e)=>{
+  const quizView = document.getElementById('view-quiz');
+  if(quizSession && quizView && quizView.classList.contains('active')){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
 
 /* ============ INIT ============ */
 renderHome();
