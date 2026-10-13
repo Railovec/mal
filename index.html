@@ -683,6 +683,30 @@
             opacity: .75;
         }
         
+
+        /* Séria dní + posledné testy */
+        .streak-card {
+            display: flex; align-items: center; gap: 14px;
+            background: var(--card); border: 1px solid var(--line);
+            border-radius: var(--radius); box-shadow: var(--shadow);
+            padding: 14px 16px; margin-bottom: 14px;
+        }
+        .streak-card .flame { font-size: 34px; line-height: 1; }
+        .streak-card .flame.off { filter: grayscale(1); opacity: .45; }
+        .streak-card .s-main { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--ink); }
+        .streak-card .s-sub { font-size: 12.5px; opacity: .7; margin-top: 3px; line-height: 1.4; }
+        .recent-test {
+            background: var(--card); border: 1px solid var(--line);
+            border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px;
+        }
+        .recent-test .rt-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+        .recent-test .rt-title { font-weight: 600; font-size: 14px; }
+        .recent-test .rt-date { font-family: var(--mono); font-size: 11.5px; opacity: .6; }
+        .recent-test .rt-pct { font-family: var(--mono); font-weight: 700; font-size: 18px; }
+        .recent-test .rt-bar { height: 7px; background: var(--paper-2); border-radius: 5px; overflow: hidden; margin: 8px 0 6px; }
+        .recent-test .rt-bar > div { height: 100%; }
+        .recent-test .rt-meta { font-family: var(--mono); font-size: 11.5px; opacity: .65; display: flex; gap: 12px; flex-wrap: wrap; }
+
         .empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -730,6 +754,7 @@
                         <div class="lbl">Na dopracovanie</div>
                     </div>
                 </div>
+                <div class="streak-card" id="homeStreak"></div>
                 <div id="homeNoAnswerNotice" class="msg err" style="display:none;"></div>
                 <button class="btn btn-primary" onclick="goTo('quizsetup')">Spustiť test</button>
                 <button class="btn btn-ghost" onclick="startOstryTest()" style="margin-top:10px;">Ostrý test (100 biológia + 100 chémia)</button>
@@ -931,6 +956,10 @@
                         <div class="num" id="statsAvg">—</div>
                         <div class="lbl">Priemerná úspešnosť</div>
                     </div>
+                </div>
+                <div class="field" style="margin-top:18px;">
+                    <label>Posledné 3 testy</label>
+                    <div id="statsRecent"></div>
                 </div>
                 <div id="statsCats"></div>
 
@@ -1203,6 +1232,7 @@
         /* ============ HOME ============ */
         function renderHome() {
             document.getElementById('topbarSub').textContent = questions.length + ' otázok';
+            renderStreak();
             document.getElementById('homeQCount').textContent = questions.length;
             document.getElementById('homeTotalTests').textContent = history.length;
             const wrongCount = Object.values(perQStats).filter(s => s.lastResult === false).length;
@@ -1828,8 +1858,88 @@ function clearAll(){
   renderQuestionsView(); renderHome();
 }
 
+/* ============ SÉRIA DNÍ + POSLEDNÉ TESTY ============ */
+// Séria sa počíta z dátumov uložených v histórii testov (nič navyše sa neukladá):
+// súvislé kalendárne dni, v ktorých bol dokončený aspoň jeden test.
+function dayKey(d){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function computeStreaks(){
+  const days = new Set(history.map(h => dayKey(new Date(h.date))));
+  const today = new Date(); today.setHours(12,0,0,0);
+  const prevDay = d => { const x = new Date(d); x.setDate(x.getDate()-1); return x; };
+
+  const doneToday = days.has(dayKey(today));
+  let cursor = doneToday ? today : prevDay(today);
+  let current = 0;
+  while(days.has(dayKey(cursor))){ current++; cursor = prevDay(cursor); }
+
+  const sorted = Array.from(days).sort();
+  let longest = 0, run = 0, prev = null;
+  sorted.forEach(k => {
+    const [y,m,d] = k.split('-').map(Number);
+    const cur = new Date(y, m-1, d, 12);
+    if(prev && dayKey(prevDay(cur)) === dayKey(prev)) run++; else run = 1;
+    if(run > longest) longest = run;
+    prev = cur;
+  });
+  return { current, longest, doneToday };
+}
+
+function daysWord(n){ return n === 1 ? 'deň' : (n >= 2 && n <= 4 ? 'dni' : 'dní'); }
+
+function renderStreak(){
+  const el = document.getElementById('homeStreak');
+  if(!el) return;
+  const { current, longest, doneToday } = computeStreaks();
+  let main, sub;
+  if(current === 0){
+    main = 'Žiadna séria';
+    sub = 'Dokonči dnes aspoň jeden test a začni novú sériu.';
+  } else {
+    main = `${current} ${daysWord(current)} v rade`;
+    sub = doneToday
+      ? 'Dnes máš splnené ✓ — vráť sa aj zajtra.'
+      : 'Dnes ešte nemáš test — dokonči aspoň jeden, aby séria neprestala.';
+  }
+  if(longest > current) sub += ` Najdlhšia séria: ${longest} ${daysWord(longest)}.`;
+  el.innerHTML = `<div class="flame ${current ? '' : 'off'}">🔥</div>
+    <div><div class="s-main">${main}</div><div class="s-sub">${sub}</div></div>`;
+}
+
+function renderRecentTests(){
+  const wrap = document.getElementById('statsRecent');
+  if(!wrap) return;
+  if(!history.length){
+    wrap.innerHTML = '<div class="empty-state">Zatiaľ žiadne dokončené testy.</div>';
+    return;
+  }
+  const subjLabel = { biologia:'Biológia', chemia:'Chémia', oboje:'Biológia + chémia', all:'Všetko' };
+  const pad = n => String(n).padStart(2,'0');
+  wrap.innerHTML = history.slice(-3).reverse().map(h => {
+    const d = new Date(h.date);
+    const dateStr = `${d.getDate()}.${d.getMonth()+1}. ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const title = (h.isOstry ? 'Ostrý test' : (subjLabel[h.subject] || 'Test'));
+    const color = h.pct>=75 ? 'var(--good)' : h.pct>=50 ? 'var(--amber)' : 'var(--bad)';
+    const time = h.timeMs ? formatMMSS(h.timeMs) : '';
+    return `<div class="recent-test">
+      <div class="rt-top">
+        <div><div class="rt-title">${title}</div><div class="rt-date">${dateStr}</div></div>
+        <div class="rt-pct" style="color:${color};">${h.pct}%</div>
+      </div>
+      <div class="rt-bar"><div style="width:${h.pct}%; background:${color};"></div></div>
+      <div class="rt-meta">
+        <span>${h.points} / ${h.maxPoints} bodov</span>
+        <span>✓ ${h.correct}</span><span>✗ ${h.wrong}</span>${time ? `<span>${time}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 /* ============ STATS ============ */
 function renderStats(){
+  renderRecentTests();
   document.getElementById('statsTests').textContent = history.length;
   document.getElementById('statsAvg').textContent = history.length ? Math.round(history.reduce((a,h)=>a+h.pct,0)/history.length)+'%' : '—';
 
