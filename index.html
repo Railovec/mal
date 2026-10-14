@@ -761,7 +761,6 @@
                     </div>
                 </div>
                 <div class="streak-card" id="homeStreak"></div>
-                <div id="homeNoAnswerNotice" class="msg err" style="display:none;"></div>
                 <button class="btn btn-primary" onclick="goTo('quizsetup')">Spustiť test</button>
                 <button class="btn btn-ghost" onclick="startOstryTest()" style="margin-top:10px;">Ostrý test (100 biológia + 100 chémia)</button>
                 <div id="homeEmpty" class="empty-state" style="display:none;">
@@ -1251,14 +1250,6 @@
             }
             document.getElementById('homeEmpty').style.display = questions.length ? 'none' : 'block';
 
-            const notice = document.getElementById('homeNoAnswerNotice');
-            if (trickCount > 0) {
-                notice.className = 'msg ok';
-                notice.style.display = 'block';
-                notice.textContent = `${trickCount} otázok je typu "chyták" — žiadna z ponúknutých možností nie je správna. Appka to vopred neprezrádza; ak si myslíš, že nič nie je správne, jednoducho neoznač žiadnu možnosť.`;
-            } else {
-                notice.style.display = 'none';
-            }
         }
 
         /* ============ QUIZ SETUP ============ */
