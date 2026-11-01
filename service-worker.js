@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zapisnik-cache-v8.1';
+const CACHE_NAME = 'zapisnik-cache-v9.0';
 const ASSETS = [
   './',
   './index.html',
