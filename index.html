@@ -498,6 +498,172 @@
         .opt.checked {
             border-color: var(--ink);
         }
+
+        /* Zamknutá odpoveď: krátke zatrasenie, keď sa ju snažíš odznačiť. */
+        .opt.shake {
+            animation: optShake .38s ease;
+            border-color: var(--bad);
+        }
+
+        @keyframes optShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        /* Malé priehľadné okienko dole (toast). */
+        #lockToast {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: calc(70px + env(safe-area-inset-bottom) + 12px);
+            z-index: 45;
+            display: flex;
+            justify-content: center;
+            padding: 0 16px;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity .22s ease, transform .22s ease;
+        }
+
+        #lockToast.show {
+            opacity: 1;
+            transform: none;
+        }
+
+        #lockToast .lock-toast-inner {
+            max-width: 420px;
+            background: rgba(18, 36, 31, 0.86);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            color: var(--paper);
+            padding: 11px 14px;
+            border-radius: 12px;
+            font-size: 12.5px;
+            line-height: 1.45;
+            box-shadow: var(--shadow);
+        }
+
+        #lockToast .lock-toast-inner b {
+            color: #f0c987;
+            font-weight: 700;
+        }
+
+        /* Okno "Čo je nové" po aktualizácii (štýl ako banner aktualizácie). */
+        #whatsNew {
+            position: fixed;
+            inset: 0;
+            z-index: 60;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
+            background: rgba(18, 36, 31, 0.55);
+            -webkit-backdrop-filter: blur(3px);
+            backdrop-filter: blur(3px);
+            animation: wnFade .22s ease;
+        }
+
+        @keyframes wnFade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        #whatsNew .wn-card {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            max-height: 100%;
+            overflow-y: auto;
+            background: var(--ink);
+            color: var(--paper);
+            border-radius: 16px;
+            padding: 26px 22px 22px;
+            box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: wnPop .26s ease;
+        }
+
+        @keyframes wnPop {
+            from { opacity: 0; transform: translateY(10px) scale(.97); }
+            to { opacity: 1; transform: none; }
+        }
+
+        #whatsNew .wn-x {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            color: var(--paper);
+            opacity: .7;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        #whatsNew .wn-x:active {
+            opacity: 1;
+            background: rgba(255, 255, 255, .1);
+        }
+
+        #whatsNew .wn-x svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        #whatsNew .wn-tag {
+            font-family: var(--mono);
+            font-size: 10.5px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: #f0c987;
+            margin: 0 0 6px;
+        }
+
+        #whatsNew h3 {
+            font-family: var(--serif);
+            font-size: 21px;
+            font-weight: 700;
+            margin: 0 36px 14px 0;
+            letter-spacing: -0.01em;
+        }
+
+        #whatsNew ul {
+            margin: 0 0 20px;
+            padding: 0 0 0 18px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        #whatsNew li {
+            margin-bottom: 9px;
+            opacity: .92;
+        }
+
+        #whatsNew .wn-close {
+            display: block;
+            margin: 0 auto;
+            background: var(--amber);
+            color: #fff;
+            border: none;
+            padding: 11px 30px;
+            border-radius: 10px;
+            font-family: var(--sans);
+            font-weight: 700;
+            font-size: 14.5px;
+            cursor: pointer;
+        }
+
+        #whatsNew .wn-close:active {
+            background: var(--amber-2);
+        }
         
         .opt.correct {
             background: var(--good-bg);
@@ -1039,6 +1205,13 @@
                         </div>
                         <button type="button" class="switch" id="showQIdSwitch" role="switch" aria-checked="true" aria-label="Zobrazovať číslo otázky" onclick="toggleShowQId()"></button>
                     </div>
+                    <div class="setting-row" style="margin-top:10px;">
+                        <div>
+                            <div class="s-text">Zamknúť označenú odpoveď</div>
+                            <div class="s-desc">Zapnuté: keď raz označíš možnosť, už ju nemôžeš odznačiť — ako na reálnom teste.</div>
+                        </div>
+                        <button type="button" class="switch" id="lockAnswersSwitch" role="switch" aria-checked="false" aria-label="Zamknúť označenú odpoveď" onclick="toggleLockAnswers()"></button>
+                    </div>
                 </div>
 
                 <div class="field" style="margin-top:26px; border-top:1px solid var(--line); padding-top:18px;">
@@ -1415,6 +1588,61 @@
             if (typeof vibrate === 'function') vibrate(10);
         }
 
+        // Nastavenie "Zamknúť označenú odpoveď" (sekcia Štatistiky → Nastavenia).
+        // Keď je zapnuté, označenú možnosť už nejde odznačiť (ako na ostrom teste).
+        // Predvolene VYPNUTÉ — zapne sa až keď to používateľ sám zapne.
+        function loadLockAnswers() {
+            try {
+                return localStorage.getItem('quiz_lock_answers') === '1';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function saveLockAnswers(v) {
+            try {
+                localStorage.setItem('quiz_lock_answers', v ? '1' : '0');
+            } catch (e) {}
+        }
+
+        let lockAnswers = loadLockAnswers();
+
+        function renderLockAnswersSwitch() {
+            const sw = document.getElementById('lockAnswersSwitch');
+            if (sw) sw.setAttribute('aria-checked', lockAnswers ? 'true' : 'false');
+        }
+
+        function toggleLockAnswers() {
+            lockAnswers = !lockAnswers;
+            saveLockAnswers(lockAnswers);
+            renderLockAnswersSwitch();
+            if (typeof vibrate === 'function') vibrate(10);
+        }
+
+        // Malé priehľadné okienko dole — povie, kde sa zamknutie dá vypnúť.
+        let lockToastTimer = null;
+        function showLockToast() {
+            let t = document.getElementById('lockToast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'lockToast';
+                t.setAttribute('role', 'status');
+                t.innerHTML = '<div class="lock-toast-inner">Označenú odpoveď už nemôžeš odznačiť. Toto nastavenie si vieš vypnúť v: <b>Štatistiky → Nastavenia → Zamknúť označenú odpoveď</b>.</div>';
+                document.body.appendChild(t);
+            }
+            // reflow, aby sa animácia spustila aj pri opakovanom zobrazení
+            void t.offsetWidth;
+            t.classList.add('show');
+            clearTimeout(lockToastTimer);
+            lockToastTimer = setTimeout(() => t.classList.remove('show'), 3800);
+        }
+
+        function hideLockToast() {
+            const t = document.getElementById('lockToast');
+            if (t) t.classList.remove('show');
+            clearTimeout(lockToastTimer);
+        }
+
         // Chemická otázka je "príklad", ak jej číslo patrí do niektorého DRUHÉHO
         // (alebo ďalšieho) rozsahu niektorej sekcie — teda do doplnkových/výpočtových
         // úloh (napr. 451–475 k téme 1–110).
@@ -1657,6 +1885,7 @@ function updateQuizTimerDisplay(){
 
 
 function renderQuizQuestion(){
+  hideLockToast();
   const s = quizSession;
   const q = s.items[s.idx];
   s.selected = new Set();
@@ -1708,11 +1937,22 @@ function vibrate(ms){
 function toggleOption(el){
   if(quizSession.answered) return;
   const letter = el.dataset.letter;
-  vibrate(15);
   if(quizSession.selected.has(letter)){
+    // Zamknuté označenie: odznačiť sa nedá → vibrácia + zatrasenie + info okienko.
+    if(lockAnswers){
+      vibrate([40, 60, 40]);
+      el.classList.remove('shake');
+      void el.offsetWidth; // reštart animácie
+      el.classList.add('shake');
+      el.addEventListener('animationend', ()=> el.classList.remove('shake'), {once:true});
+      showLockToast();
+      return;
+    }
+    vibrate(15);
     quizSession.selected.delete(letter);
     el.classList.remove('checked');
   } else {
+    vibrate(15);
     quizSession.selected.add(letter);
     el.classList.add('checked');
   }
@@ -1721,6 +1961,7 @@ function toggleOption(el){
 function checkAnswer(){
   const s = quizSession;
   if(s.answered) return;
+  hideLockToast();
   vibrate(25);
   // 0 označených možností je platná odpoveď — znamená "žiadna z ponúknutých
   // možností nie je správna" (rovnako ako keď na ostrej skúške nevyplníš nič).
@@ -2046,6 +2287,7 @@ function renderRecentTests(){
 /* ============ STATS ============ */
 function renderStats(){
   renderShowQIdSwitch();
+  renderLockAnswersSwitch();
   renderRecentTests();
   document.getElementById('statsTests').textContent = history.length;
   document.getElementById('statsAvg').textContent = history.length ? Math.round(history.reduce((a,h)=>a+h.pct,0)/history.length)+'%' : '—';
@@ -2103,11 +2345,81 @@ window.addEventListener('beforeunload', (e)=>{
   }
 });
 
+/* ============ ČO JE NOVÉ (okno po aktualizácii) ============ */
+// Pri každej novej verzii zmeň 'id' a prepíš 'items' — okno sa ukáže každému
+// používateľovi jednorazovo, kým ho nezavrie (krížik alebo "Zavrieť").
+const WHATS_NEW = {
+  id: '2026-11-18',
+  title: 'Čo je nové',
+  items: [
+    'Nové nastavenie „Zamknúť označenú odpoveď“ — ako na reálnom teste: keď označíš možnosť, už ju nejde odznačiť. Nájdeš ho v Štatistiky → Nastavenia (predvolene je vypnuté).',
+    'Po každej aktualizácii appky sa ukáže toto okno s novinkami.'
+  ]
+};
+const WHATS_NEW_KEY = 'quiz_whats_new_seen';
+
+function maybeShowWhatsNew(){
+  if(!WHATS_NEW || !WHATS_NEW.id) return;
+  let seen = null;
+  try{ seen = localStorage.getItem(WHATS_NEW_KEY); }catch(e){}
+  if(seen === WHATS_NEW.id) return;
+
+  // Úplne nový používateľ (ešte nič nerobil) nemá čo "aktualizovať" —
+  // len si potichu zapamätáme aktuálnu verziu a okno mu neukážeme.
+  if(seen === null){
+    const isExistingUser = (history && history.length) || Object.keys(perQStats || {}).length;
+    if(!isExistingUser){
+      try{ localStorage.setItem(WHATS_NEW_KEY, WHATS_NEW.id); }catch(e){}
+      return;
+    }
+  }
+  showWhatsNew();
+}
+
+function showWhatsNew(){
+  if(document.getElementById('whatsNew')) return;
+  const wrap = document.createElement('div');
+  wrap.id = 'whatsNew';
+  wrap.setAttribute('role', 'dialog');
+  wrap.setAttribute('aria-modal', 'true');
+  wrap.setAttribute('aria-labelledby', 'whatsNewTitle');
+  wrap.innerHTML = `
+    <div class="wn-card">
+      <button type="button" class="wn-x" aria-label="Zavrieť">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <p class="wn-tag">Nová verzia</p>
+      <h3 id="whatsNewTitle"></h3>
+      <ul></ul>
+      <button type="button" class="wn-close">Zavrieť</button>
+    </div>`;
+  wrap.querySelector('h3').textContent = WHATS_NEW.title || 'Čo je nové';
+  const ul = wrap.querySelector('ul');
+  (WHATS_NEW.items || []).forEach(t=>{
+    const li = document.createElement('li');
+    li.textContent = t;
+    ul.appendChild(li);
+  });
+  document.body.appendChild(wrap);
+
+  const close = ()=>{
+    try{ localStorage.setItem(WHATS_NEW_KEY, WHATS_NEW.id); }catch(e){}
+    document.removeEventListener('keydown', onKey);
+    wrap.remove();
+  };
+  const onKey = (e)=>{ if(e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  wrap.querySelector('.wn-x').onclick = close;
+  wrap.querySelector('.wn-close').onclick = close;
+}
+
 /* ============ INIT ============ */
 renderHome();
 renderQuizSetup();
 renderShowQIdSwitch();
+renderLockAnswersSwitch();
 renderAppVersion();
+maybeShowWhatsNew();
 
 // Service worker: appka funguje offline vďaka cache-first stratégii (šetrí
 // mobilné dáta — otázky sa neťahajú zo siete pri každom otvorení). Kontrolu

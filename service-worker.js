@@ -1,4 +1,6 @@
-const CACHE_NAME = 'zapisnik-cache-v9.0';
+const CACHE_NAME = 'zapisnik-cache-v10.0';
+// pepíš update v index.html pre pop-up
+//const WHATS_NEW = {
 const ASSETS = [
   './',
   './index.html',
