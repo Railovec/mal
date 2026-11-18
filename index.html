@@ -1191,7 +1191,7 @@
             <!-- QUESTIONS / DB -->
             <section class="view" id="view-questions">
                 <h2 class="section-title">Otázky</h2>
-                <p class="section-desc">Otázky označené hviezdičkou ★. Označíš ich ťuknutím na hviezdičku v rohu otázky počas testu.</p>
+                <p class="section-desc">Otázky označené hviezdičkou ★. Označíš ich ťuknutím na hviezdičku v rohu otázky počas testu. Ťuknutím na otázku ju rozbalíš a uvidíš všetky možnosti.</p>
 
                 <div id="qSkippedBanner" class="msg err" style="display:none;"></div>
 
@@ -2218,6 +2218,9 @@ function renderSummaryReview(){
 }
 
 /* ============ QUESTIONS / IMPORT ============ */
+// Ktoré označené otázky sú práve rozbalené (aby sa po odznačení inej nezbalili).
+const openStars = new Set();
+
 function renderQuestionsView(){
   const skippedBanner = document.getElementById('qSkippedBanner');
   if(importSkippedCount>0){
@@ -2234,15 +2237,35 @@ function renderQuestionsView(){
     wrap.innerHTML = '<div class="empty-state">Zatiaľ nemáš žiadne označené otázky. Hviezdičku ☆ nájdeš v rohu otázky počas testu.</div>';
     return;
   }
-  wrap.innerHTML = list.map(q=>`
+  wrap.innerHTML = list.map(q=>{
+    const open = openStars.has(q._uid);
+    const hasRight = q.options.some(o=>o.correct);
+    const opts = q.options.map(o=>`<div class="opt disabled${o.correct ? ' correct' : ''}"><div class="box">${o.letter}</div><div>${o.image ? `<img src="${o.image}" alt="Možnosť ${o.letter}" style="max-width:100%; border-radius:6px; display:block;">` : (o.text || '')}</div></div>`).join('');
+    return `
     <div class="qlist-item" style="display:flex; gap:8px; align-items:flex-start;">
-      <div style="flex:1;">
-        <div class="m">${q.subject==='biologia'?'BIOLÓGIA':'CHÉMIA'} · #${q.id}${q._section ? ' · ' + q._section.label : ''}</div>
+      <div class="star-main" data-uid="${q._uid}" style="flex:1; min-width:0; cursor:pointer;">
+        <div class="m">${q.subject==='biologia'?'BIOLÓGIA':'CHÉMIA'} · #${q.id}${q._section ? ' · ' + q._section.label : ''} · <span class="chev">${open ? '▾ zbaliť' : '▸ rozbaliť'}</span></div>
         ${q.question || (q.question_image ? '<em>(zadanie je na obrázku)</em>' : '')}
+        <div class="star-full" style="display:${open ? 'block' : 'none'}; margin-top:10px; cursor:default;">
+          ${q.question_image ? `<img src="${q.question_image}" alt="Obrázok k otázke" style="max-width:100%; border-radius:8px; margin-bottom:10px; border:1px solid var(--line);">` : ''}
+          <div class="options" style="margin-top:0;">${opts}</div>
+          ${hasRight ? '' : '<div class="msg ok" style="margin:10px 0 0;">Chyták: žiadna z možností nie je správna.</div>'}
+          ${q.explanation ? `<div class="explain show"><span class="tag">Vysvetlenie</span>${q.explanation}</div>` : ''}
+        </div>
       </div>
       <button type="button" class="star-btn" data-uid="${q._uid}" aria-label="Odznačiť hviezdičku">★</button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.star-main').forEach(el=>{
+    const full = el.querySelector('.star-full');
+    full.onclick = e=> e.stopPropagation();
+    el.onclick = ()=>{
+      const open = full.style.display === 'none';
+      full.style.display = open ? 'block' : 'none';
+      el.querySelector('.chev').textContent = open ? '▾ zbaliť' : '▸ rozbaliť';
+      if(open) openStars.add(el.dataset.uid); else openStars.delete(el.dataset.uid);
+    };
+  });
   wrap.querySelectorAll('.star-btn').forEach(b=>{
     b.onclick = ()=>{ toggleStar(b.dataset.uid); renderQuestionsView(); };
   });
