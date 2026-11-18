@@ -13,10 +13,19 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" href="icon-192.png">
+    <script>
+        (function(){try{var t=localStorage.getItem('quiz_theme')||'auto';var d=t==='dark'||(t==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',d?'#12241f':'#1D3B36');}catch(e){}})();
+    </script>
     <script src="questions-data.js"></script>
     <style>
          :root {
             --ink: #1D3B36;
+            --surface-dark: #1D3B36; /* zelené okná (banner, Čo je nové) ostávajú zelené v oboch režimoch */
+            --on-dark: #F7F3EC;
+            --toast-bg: rgba(18, 36, 31, 0.86);
+            --bar-bg: rgba(247, 243, 236, 0.92);
+            --tint: rgba(29, 59, 54, 0.03);
+            --tint-2: rgba(29, 59, 54, 0.08);
             --ink-2: #12241f;
             --paper: #F7F3EC;
             --paper-2: #EFE9DC;
@@ -35,6 +44,36 @@
             --mono: 'IBM Plex Mono', 'SF Mono', ui-monospace, Menlo, monospace;
         }
         
+        :root[data-theme="dark"] {
+            color-scheme: dark;
+            --ink: #E6E0D2;
+            --ink-2: #cdc6b6;
+            --paper: #101a17;
+            --paper-2: #1c2a26;
+            --card: #16221e;
+            --amber: #D79A3A;
+            --amber-2: #E3AC55;
+            --good: #6FCB93;
+            --good-bg: #1b3326;
+            --bad: #EE8A82;
+            --bad-bg: #3b2321;
+            --line: rgba(230, 224, 210, 0.16);
+            --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+            --toast-bg: rgba(48, 80, 71, 0.94);
+            --bar-bg: rgba(16, 26, 23, 0.92);
+            --tint: rgba(255, 255, 255, 0.03);
+            --tint-2: rgba(255, 255, 255, 0.08);
+        }
+
+        :root[data-theme="dark"] .switch[aria-checked="true"] {
+            background: var(--good);
+        }
+
+        :root[data-theme="dark"] .opt.correct .box,
+        :root[data-theme="dark"] .opt.incorrect .box {
+            color: #101a17;
+        }
+
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
@@ -359,7 +398,7 @@
             border: 1.5px solid var(--line);
             border-radius: 12px;
             padding: 8px;
-            background: rgba(29, 59, 54, 0.03);
+            background: var(--tint);
         }
 
         .chip-col-scroll .chip {
@@ -536,10 +575,10 @@
 
         #lockToast .lock-toast-inner {
             max-width: 420px;
-            background: rgba(18, 36, 31, 0.86);
+            background: var(--toast-bg);
             -webkit-backdrop-filter: blur(8px);
             backdrop-filter: blur(8px);
-            color: var(--paper);
+            color: var(--on-dark);
             padding: 11px 14px;
             border-radius: 12px;
             font-size: 12.5px;
@@ -551,6 +590,12 @@
             color: #f0c987;
             font-weight: 700;
         }
+
+        .quiz-card { position: relative; }
+        .star-btn { background: none; border: none; font-size: 22px; line-height: 1; padding: 6px; cursor: pointer; color: var(--amber); }
+        #quizStarBtn { position: absolute; top: 10px; right: 10px; }
+        .topic-row { display: block; width: 100%; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; cursor: pointer; font-family: inherit; color: var(--ink); box-shadow: var(--shadow); }
+        .topic-row:active { transform: scale(0.99); }
 
         /* Okno "Čo je nové" po aktualizácii (štýl ako banner aktualizácie). */
         #whatsNew {
@@ -578,8 +623,8 @@
             max-width: 400px;
             max-height: 100%;
             overflow-y: auto;
-            background: var(--ink);
-            color: var(--paper);
+            background: var(--surface-dark);
+            color: var(--on-dark);
             border-radius: 16px;
             padding: 26px 22px 22px;
             box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
@@ -602,7 +647,7 @@
             justify-content: center;
             background: transparent;
             border: none;
-            color: var(--paper);
+            color: var(--on-dark);
             opacity: .7;
             cursor: pointer;
             border-radius: 50%;
@@ -802,7 +847,7 @@
         
         .import-hint code {
             font-family: var(--mono);
-            background: rgba(29, 59, 54, 0.08);
+            background: var(--tint-2);
             padding: 1px 5px;
             border-radius: 4px;
             font-size: 11.5px;
@@ -854,7 +899,7 @@
             left: 0;
             right: 0;
             z-index: 30;
-            background: rgba(247, 243, 236, 0.92);
+            background: var(--bar-bg);
             backdrop-filter: blur(10px);
             border-top: 1px solid var(--line);
             display: flex;
@@ -989,6 +1034,13 @@
                     </div>
                 </div>
                 <div class="streak-card" id="homeStreak"></div>
+                <div class="stat-card" style="margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                    <div>
+                        <div class="num" id="homeDueCount">0</div>
+                        <div class="lbl">Dnes na opakovanie</div>
+                    </div>
+                    <button class="btn btn-amber" style="width:auto; padding:11px 16px;" onclick="goTo('repeat')">Opakovať</button>
+                </div>
                 <button class="btn btn-primary" onclick="goTo('quizsetup')">Spustiť test</button>
                 <button class="btn btn-ghost" onclick="startOstryTest()" style="margin-top:10px;">Ostrý test (100 biológia + 100 chémia)</button>
                 <div id="homeEmpty" class="empty-state" style="display:none;">
@@ -1072,6 +1124,7 @@
                     <span id="quizCatLabel"></span>
                 </div>
                 <div class="quiz-card">
+                    <button type="button" class="star-btn" id="quizStarBtn" onclick="toggleCurrentStar()" aria-label="Označiť otázku hviezdičkou">☆</button>
                     <div class="quiz-cat" id="quizQCat">Biológia · #1 · Sekcia</div>
                     <p class="quiz-q" id="quizQText">Otázka sa načítava…</p>
                     <img id="quizQImage" src="" alt="Obrázok k otázke" style="display:none; max-width:100%; border-radius:8px; margin:10px 0; border:1px solid var(--line);">
@@ -1137,12 +1190,15 @@
 
             <!-- QUESTIONS / DB -->
             <section class="view" id="view-questions">
-                <h2 class="section-title">Databáza otázok</h2>
-                <p class="section-desc">Hlavný zdroj otázok je súbor <code style="font-family:var(--mono); background:rgba(29,59,54,0.08); padding:1px 5px; border-radius:4px;">questions-data.js</code>, ktorý naplníš priamo v kóde. Tu ich len prezerieš, alebo dočasne doplníš
-                    pár ďalších bez potreby redeploy.</p>
+                <h2 class="section-title">Otázky</h2>
+                <p class="section-desc">Otázky označené hviezdičkou ★. Označíš ich ťuknutím na hviezdičku v rohu otázky počas testu.</p>
 
-                <div id="qNoAnswerBanner" class="msg err" style="display:none;"></div>
                 <div id="qSkippedBanner" class="msg err" style="display:none;"></div>
+
+                <button class="btn btn-primary" id="starStartBtn" onclick="startStarred()" style="margin-bottom:14px;">Test z označených</button>
+                <div id="starList"></div>
+
+                <hr style="border:none;border-top:1px solid var(--line); margin:22px 0;">
 
                 <details style="margin-bottom:16px;">
                     <summary style="cursor:pointer; font-size:13px; font-weight:600; opacity:.75;">+ Dočasne doplniť otázky cez appku (bez editácie kódu)</summary>
@@ -1167,13 +1223,31 @@
                     </div>
                 </details>
 
-                <hr style="border:none;border-top:1px solid var(--line); margin:22px 0;">
-
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <label style="font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; opacity:.65;">Všetky otázky (<span id="qlistCount">0</span>)</label>
+                <div style="margin-top:6px;">
                     <button class="btn btn-ghost" style="width:auto; padding:8px 12px; font-size:12px;" onclick="clearAll()">Vymazať doplnkové + štatistiky</button>
                 </div>
-                <div id="qlist"></div>
+            </section>
+
+            <!-- OPAKOVANIE -->
+            <section class="view" id="view-repeat">
+                <h2 class="section-title">Opakovanie</h2>
+                <p class="section-desc">Zle zodpovedané otázky sa vracajú častejšie, zvládnuté zriedkavejšie.</p>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="num" id="repeatDue">0</div>
+                        <div class="lbl">Na opakovanie</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="num" id="repeatMastered">0</div>
+                        <div class="lbl">Zvládnuté</div>
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="repeatStartBtn" onclick="startRepeat()">Spustiť opakovanie</button>
+                <div class="field" style="margin-top:26px; border-top:1px solid var(--line); padding-top:18px;">
+                    <label>Slabé témy</label>
+                    <p style="font-size:12.5px; opacity:.65; margin:0 0 10px; line-height:1.5;">Najslabšie témy podľa tvojich odpovedí. Ťuknutím spustíš test z danej témy.</p>
+                    <div id="weakTopics"></div>
+                </div>
             </section>
 
             <!-- STATS -->
@@ -1199,6 +1273,24 @@
                 <div class="field" style="margin-top:26px; border-top:1px solid var(--line); padding-top:18px;">
                     <label>Nastavenia</label>
                     <div class="setting-row">
+                        <div>
+                            <div class="s-text">Čo je nové</div>
+                            <div class="s-desc">Zoznam zmien z poslednej aktualizácie appky.</div>
+                        </div>
+                        <button type="button" class="btn btn-ghost" style="width:auto; padding:9px 14px; font-size:13px;" onclick="showWhatsNew()">Zobraziť</button>
+                    </div>
+                    <div class="setting-row" style="margin-top:10px; flex-direction:column; align-items:stretch; gap:10px;">
+                        <div>
+                            <div class="s-text">Vzhľad</div>
+                            <div class="s-desc">Svetlá, tmavá alebo podľa nastavenia telefónu.</div>
+                        </div>
+                        <div class="chip-row" id="themeChips">
+                            <div class="chip" data-theme="light" onclick="setTheme('light')">Svetlá</div>
+                            <div class="chip" data-theme="dark" onclick="setTheme('dark')">Tmavá</div>
+                            <div class="chip" data-theme="auto" onclick="setTheme('auto')">Podľa systému</div>
+                        </div>
+                    </div>
+                    <div class="setting-row" style="margin-top:10px;">
                         <div>
                             <div class="s-text">Zobrazovať číslo otázky</div>
                             <div class="s-desc">Vypnuté: nad otázkou sa neukáže jej ID.</div>
@@ -1233,6 +1325,10 @@
                 <button class="tab-btn" data-view="quizsetup" onclick="goTo('quizsetup')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
         Test
+      </button>
+                <button class="tab-btn" data-view="repeat" onclick="goTo('repeat')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 00-14.9-3M4 5v4h4"/><path d="M4 13a8 8 0 0014.9 3M20 19v-4h-4"/></svg>
+        Opakovanie
       </button>
                 <button class="tab-btn" data-view="questions" onclick="goTo('questions')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 116 0c0 2-3 2-3 5" /><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>
@@ -1468,7 +1564,8 @@
                 quiz: 'quizsetup',
                 summary: 'quizsetup',
                 questions: 'questions',
-                stats: 'stats'
+                stats: 'stats',
+                repeat: 'repeat'
             };
             const tabTarget = map[view];
             const btn = document.querySelector(`.tab-btn[data-view="${tabTarget}"]`);
@@ -1477,6 +1574,7 @@
             if (view === 'quizsetup') renderQuizSetup();
             if (view === 'questions') renderQuestionsView();
             if (view === 'stats') renderStats();
+            if (view === 'repeat') renderRepeat();
             window.scrollTo(0, 0);
         }
 
@@ -1488,6 +1586,7 @@
             document.getElementById('homeTotalTests').textContent = history.length;
             const wrongCount = Object.values(perQStats).filter(s => s.lastResult === false).length;
             document.getElementById('homeWrongCount').textContent = wrongCount;
+            document.getElementById('homeDueCount').textContent = dueQuestions().length;
             if (history.length) {
                 const avg = Math.round(history.reduce((a, h) => a + h.pct, 0) / history.length);
                 document.getElementById('homeAccuracy').textContent = avg + '%';
@@ -1922,6 +2021,7 @@ function renderQuizQuestion(){
   document.getElementById('quizCheckBtn').style.display = 'block';
   document.getElementById('quizCheckBtn').disabled = false;
   document.getElementById('quizNextBtn').style.display = 'none';
+  updateQuizStar();
 }
 
 function vibrate(ms){
@@ -1987,12 +2087,13 @@ function checkAnswer(){
   perQStats[q._uid] = perQStats[q._uid] || {correctCount:0, wrongCount:0};
   if(isCorrect) perQStats[q._uid].correctCount++; else perQStats[q._uid].wrongCount++;
   perQStats[q._uid].lastResult = isCorrect;
+  leitnerUpdate(perQStats[q._uid], isCorrect);
   savePerQStats(perQStats);
 
   // Zaznamenaj otázku do prehľadu, ktorý sa zobrazí vo vyhodnotení testu.
   s.reviewList = s.reviewList || [];
   s.reviewList.push({
-    id: q.id, subject: q.subject, question: q.question, question_image: q.question_image,
+    uid: q._uid, id: q.id, subject: q.subject, question: q.question, question_image: q.question_image,
     options: q.options, chosen, correct, isCorrect
   });
 
@@ -2103,6 +2204,7 @@ function renderSummaryReview(){
     return `
     <div class="quiz-card" style="margin-bottom:12px;">
       <div class="quiz-cat">${r.subject==='biologia'?'Biológia':'Chémia'}${qIdLabel(r.id)}
+        <button type="button" class="star-btn" data-uid="${r.uid}" style="float:right; font-size:18px; padding:0 0 0 10px; margin-top:-3px;" aria-label="Označiť hviezdičkou">${starGlyph(r.uid)}</button>
         <span style="float:right; font-weight:700; color:${r.isCorrect?'var(--good)':'var(--bad)'};">${r.isCorrect?'✓ Správne':'✗ Nesprávne'}</span>
       </div>
       <p class="quiz-q" style="font-size:14.5px; margin:8px 0;">${r.question || (r.question_image ? '(zadanie je na obrázku nižšie)' : '')}</p>
@@ -2110,37 +2212,40 @@ function renderSummaryReview(){
       <div class="options">${optsHtml}</div>
     </div>`;
   }).join('');
+  wrap.querySelectorAll('.star-btn').forEach(b=>{
+    b.onclick = ()=>{ toggleStar(b.dataset.uid); b.textContent = starGlyph(b.dataset.uid); };
+  });
 }
 
 /* ============ QUESTIONS / IMPORT ============ */
 function renderQuestionsView(){
-  document.getElementById('qlistCount').textContent = questions.length;
-
-  const noAnswerBanner = document.getElementById('qNoAnswerBanner');
-  if(trickCount>0){
-    noAnswerBanner.className = 'msg ok';
-    noAnswerBanner.style.display = 'block';
-    noAnswerBanner.textContent = `${trickCount} otázok je typu "chyták" (označené nižšie) — žiadna z ponúknutých možností nie je správna. V teste sa to vopred neprezrádza; správna reakcia je neoznačiť nič.`;
-  } else { noAnswerBanner.style.display = 'none'; }
-
   const skippedBanner = document.getElementById('qSkippedBanner');
   if(importSkippedCount>0){
     skippedBanner.style.display = 'block';
     skippedBanner.textContent = `${importSkippedCount} otázok bolo úplne vynechaných pri načítaní (chýba text otázky alebo možnosti).`;
   } else { skippedBanner.style.display = 'none'; }
 
-  const list = document.getElementById('qlist');
-  if(!questions.length){
-    list.innerHTML = '<div class="empty-state">Databáza je prázdna. Vlož otázky do questions-data.js.</div>';
+  const list = questions.filter(q=>starred.has(q._uid));
+  const btn = document.getElementById('starStartBtn');
+  btn.disabled = !list.length;
+  btn.textContent = `Test z označených (${list.length})`;
+  const wrap = document.getElementById('starList');
+  if(!list.length){
+    wrap.innerHTML = '<div class="empty-state">Zatiaľ nemáš žiadne označené otázky. Hviezdičku ☆ nájdeš v rohu otázky počas testu.</div>';
     return;
   }
-  const recent = questions.slice(-40).reverse();
-  list.innerHTML = recent.map(q=>`
-    <div class="qlist-item">
-      <div class="m">${q.subject==='biologia'?'BIOLÓGIA':'CHÉMIA'} · #${q.id}${q._section ? ' · ' + q._section.label : ''}${q._isTrick ? ' · <span style="color:var(--amber-2);">CHYTÁK</span>' : ''}</div>
-      ${q.question || (q.question_image ? '<em>(zadanie je na obrázku)</em>' : '')}
+  wrap.innerHTML = list.map(q=>`
+    <div class="qlist-item" style="display:flex; gap:8px; align-items:flex-start;">
+      <div style="flex:1;">
+        <div class="m">${q.subject==='biologia'?'BIOLÓGIA':'CHÉMIA'} · #${q.id}${q._section ? ' · ' + q._section.label : ''}</div>
+        ${q.question || (q.question_image ? '<em>(zadanie je na obrázku)</em>' : '')}
+      </div>
+      <button type="button" class="star-btn" data-uid="${q._uid}" aria-label="Odznačiť hviezdičku">★</button>
     </div>
-  `).join('') + (questions.length>40 ? `<div class="qlist-item m" style="text-align:center;">…a ďalších ${questions.length-40}</div>` : '');
+  `).join('');
+  wrap.querySelectorAll('.star-btn').forEach(b=>{
+    b.onclick = ()=>{ toggleStar(b.dataset.uid); renderQuestionsView(); };
+  });
 }
 
 function validateQuestions(arr){
@@ -2286,6 +2391,7 @@ function renderRecentTests(){
 
 /* ============ STATS ============ */
 function renderStats(){
+  renderThemeChips();
   renderShowQIdSwitch();
   renderLockAnswersSwitch();
   renderRecentTests();
@@ -2345,13 +2451,172 @@ window.addEventListener('beforeunload', (e)=>{
   }
 });
 
+/* ============ VZHĽAD (tmavý režim) ============ */
+// 'light' | 'dark' | 'auto' (podľa systému, predvolené).
+function loadTheme(){
+  try{ return localStorage.getItem('quiz_theme') || 'auto'; }catch(e){ return 'auto'; }
+}
+let themeMode = loadTheme();
+const darkMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+function applyTheme(){
+  const dark = themeMode === 'dark' || (themeMode === 'auto' && darkMQ && darkMQ.matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  const m = document.querySelector('meta[name="theme-color"]');
+  if(m) m.setAttribute('content', dark ? '#12241f' : '#1D3B36');
+}
+function renderThemeChips(){
+  document.querySelectorAll('#themeChips .chip').forEach(c=>{
+    c.classList.toggle('selected', c.dataset.theme === themeMode);
+  });
+}
+function setTheme(mode){
+  themeMode = mode;
+  try{ localStorage.setItem('quiz_theme', mode); }catch(e){}
+  applyTheme();
+  renderThemeChips();
+  vibrate(10);
+}
+if(darkMQ && darkMQ.addEventListener) darkMQ.addEventListener('change', applyTheme);
+
+/* ============ OPAKOVANIE (Leitner), SLABÉ TÉMY, HVIEZDIČKY ============ */
+// Boxy 1–5: zlá odpoveď vráti otázku do boxu 1, správna ju posunie vyššie.
+// Interval (v dňoch) do ďalšieho opakovania podľa boxu.
+const LEITNER_DAYS = [0, 0, 1, 3, 7, 14];
+const DAY_MS = 86400000;
+const REPEAT_BATCH = 20; // koľko otázok sa zopakuje v jednom kole
+
+function leitnerUpdate(st, ok){
+  st.box = ok ? Math.min(5, (st.box || 1) + 1) : 1;
+  st.due = Date.now() + LEITNER_DAYS[st.box] * DAY_MS;
+}
+
+// Staré štatistiky (bez boxov) sa jednorazovo zaradia: zle → box 1 hneď,
+// správne → box 2 (opakovanie o deň).
+function migrateLeitner(){
+  let changed = false;
+  Object.values(perQStats).forEach(st=>{
+    if(st.box === undefined){
+      st.box = st.lastResult === false ? 1 : 2;
+      st.due = st.lastResult === false ? 0 : Date.now() + LEITNER_DAYS[2] * DAY_MS;
+      changed = true;
+    }
+  });
+  if(changed) savePerQStats(perQStats);
+}
+
+function dueQuestions(){
+  const now = Date.now();
+  return questions
+    .filter(q=>{ const st = perQStats[q._uid]; return q._hasAnswer && st && st.due !== undefined && st.due <= now; })
+    .sort((a,b)=>{ const x = perQStats[a._uid], y = perQStats[b._uid]; return (x.box - y.box) || (x.due - y.due); });
+}
+
+// Spoločný štart testu z hotového zoznamu otázok.
+function launchQuiz(pool){
+  if(!pool.length){ alert('Žiadne otázky na zobrazenie.'); return; }
+  if(setupState.optionsMode === 'random4') pool = pool.map(q => pickRandomOptionsSubset(q, 4));
+  quizSession = { items: pool, idx:0, correct:0, wrong:0, points:0, maxPoints:0, answered:false, selected:new Set(), startTs: Date.now(), timerInterval:null };
+  goTo('quiz');
+  renderQuizQuestion();
+  startQuizTimer();
+}
+
+function startRepeat(){ launchQuiz(dueQuestions().slice(0, REPEAT_BATCH)); }
+
+function renderRepeat(){
+  const due = dueQuestions().length;
+  document.getElementById('repeatDue').textContent = due;
+  document.getElementById('repeatMastered').textContent = Object.values(perQStats).filter(s=>s.box >= 4).length;
+  const btn = document.getElementById('repeatStartBtn');
+  btn.disabled = !due;
+  btn.textContent = due ? `Spustiť opakovanie (${Math.min(due, REPEAT_BATCH)})` : 'Dnes nič na opakovanie';
+  renderWeakTopics();
+}
+
+function renderWeakTopics(){
+  const map = {};
+  questions.forEach(q=>{
+    const st = perQStats[q._uid];
+    if(!st) return;
+    (q._sections || []).forEach(sec=>{
+      const k = sectionKey(q.subject, sec.id);
+      const t = map[k] = map[k] || { key:k, subject:q.subject, label:sec.label, c:0, w:0 };
+      t.c += st.correctCount; t.w += st.wrongCount;
+    });
+  });
+  const rows = Object.values(map)
+    .filter(t=>t.c + t.w >= 4)
+    .map(t=>Object.assign(t, { pct: Math.round(t.c / (t.c + t.w) * 100) }))
+    .sort((a,b)=>a.pct - b.pct)
+    .slice(0, 8);
+  const wrap = document.getElementById('weakTopics');
+  if(!rows.length){
+    wrap.innerHTML = '<div class="empty-state">Zatiaľ málo dát — téma sa ukáže po aspoň 4 odpovediach.</div>';
+    return;
+  }
+  wrap.innerHTML = rows.map(t=>`
+    <button type="button" class="topic-row" data-key="${t.key}">
+      <div style="display:flex; justify-content:space-between; gap:10px; font-size:13px; margin-bottom:6px;">
+        <span style="font-weight:600;">${t.label} <span style="opacity:.5; font-weight:400;">· ${t.subject==='biologia'?'Biológia':'Chémia'}</span></span>
+        <span style="font-family:var(--mono); opacity:.7;">${t.pct}%</span>
+      </div>
+      <div style="height:8px; background:var(--paper-2); border-radius:5px; overflow:hidden;">
+        <div style="height:100%; width:${t.pct}%; background:${t.pct>=75?'var(--good)':t.pct>=50?'var(--amber)':'var(--bad)'};"></div>
+      </div>
+    </button>`).join('');
+  wrap.querySelectorAll('.topic-row').forEach(b=>{ b.onclick = ()=> startTopic(b.dataset.key); });
+}
+
+// Test z jednej témy: najprv sa uprednostnia otázky, ktoré si naposledy zle zodpovedal.
+function startTopic(key){
+  const pool = questions.filter(q=>q._hasAnswer && (q._sections || []).some(sec=>sectionKey(q.subject, sec.id) === key));
+  const n = setupState.count === 'custom' ? (setupState.customCount || 9999) : setupState.count;
+  const isWrong = q => perQStats[q._uid] && perQStats[q._uid].lastResult === false;
+  const ordered = shuffle(pool.filter(isWrong)).concat(shuffle(pool.filter(q=>!isWrong(q))));
+  launchQuiz(shuffle(ordered.slice(0, n)));
+}
+
+const STAR_KEY = 'quiz_starred';
+function loadStarred(){
+  try{ return new Set(JSON.parse(localStorage.getItem(STAR_KEY)) || []); }catch(e){ return new Set(); }
+}
+let starred = loadStarred();
+function saveStarred(){
+  try{ localStorage.setItem(STAR_KEY, JSON.stringify(Array.from(starred))); }catch(e){}
+}
+function starGlyph(uid){ return starred.has(uid) ? '★' : '☆'; }
+function toggleStar(uid){
+  if(starred.has(uid)) starred.delete(uid); else starred.add(uid);
+  saveStarred();
+  vibrate(10);
+}
+function updateQuizStar(){
+  const b = document.getElementById('quizStarBtn');
+  if(!b || !quizSession) return;
+  const q = quizSession.items[quizSession.idx];
+  if(q) b.textContent = starGlyph(q._uid);
+}
+function toggleCurrentStar(){
+  const q = quizSession && quizSession.items[quizSession.idx];
+  if(!q) return;
+  toggleStar(q._uid);
+  updateQuizStar();
+}
+function startStarred(){
+  launchQuiz(shuffle(questions.filter(q=>q._hasAnswer && starred.has(q._uid))));
+}
+
 /* ============ ČO JE NOVÉ (okno po aktualizácii) ============ */
 // Pri každej novej verzii zmeň 'id' a prepíš 'items' — okno sa ukáže každému
 // používateľovi jednorazovo, kým ho nezavrie (krížik alebo "Zavrieť").
 const WHATS_NEW = {
-  id: '2026-11-18',
+  id: '2026-11-18c',
   title: 'Čo je nové',
   items: [
+    'Tmavý režim: v Štatistiky → Nastavenia → Vzhľad vyberieš svetlú, tmavú alebo podľa systému.',
+    'Nová záložka „Opakovanie“: zle zodpovedané otázky sa vracajú častejšie, zvládnuté zriedkavejšie. Počet otázok na dnes vidíš aj na domovskej obrazovke.',
+    'Slabé témy: v záložke Opakovanie vidíš témy s najnižšou úspešnosťou a ťuknutím spustíš test z nich.',
+    'Hviezdička ★ v rohu otázky: označené otázky nájdeš v záložke Otázky a môžeš z nich spustiť test.',
     'Nové nastavenie „Zamknúť označenú odpoveď“ — ako na reálnom teste: keď označíš možnosť, už ju nejde odznačiť. Nájdeš ho v Štatistiky → Nastavenia (predvolene je vypnuté).',
     'Po každej aktualizácii appky sa ukáže toto okno s novinkami.'
   ]
@@ -2414,6 +2679,9 @@ function showWhatsNew(){
 }
 
 /* ============ INIT ============ */
+applyTheme();
+renderThemeChips();
+migrateLeitner();
 renderHome();
 renderQuizSetup();
 renderShowQIdSwitch();
@@ -2451,7 +2719,7 @@ if('serviceWorker' in navigator){
     const bar = document.createElement('div');
     bar.id = 'updateBanner';
     bar.style.cssText = 'position:fixed; left:0; right:0; bottom:calc(70px + env(safe-area-inset-bottom) + 10px); z-index:40; display:flex; justify-content:center; padding:0 16px; pointer-events:none;';
-    bar.innerHTML = `<div style="pointer-events:auto; background:var(--ink); color:var(--paper); padding:10px 12px 10px 16px; border-radius:12px; font-size:13px; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow); max-width:100%;">
+    bar.innerHTML = `<div style="pointer-events:auto; background:var(--surface-dark); color:var(--on-dark); padding:10px 12px 10px 16px; border-radius:12px; font-size:13px; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow); max-width:100%;">
       <span>Nová verzia appky je pripravená.</span>
       <button id="updateBannerBtn" style="background:var(--amber); color:#fff; border:none; padding:7px 12px; border-radius:8px; font-weight:700; font-size:12.5px; white-space:nowrap; cursor:pointer;">Obnoviť</button>
     </div>`;
