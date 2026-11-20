@@ -598,7 +598,7 @@
         .topic-row:active { transform: scale(0.99); }
 
         /* Okno "Čo je nové" po aktualizácii (štýl ako banner aktualizácie). */
-        #whatsNew {
+        #whatsNew , #batchPopup {
             position: fixed;
             inset: 0;
             z-index: 60;
@@ -617,7 +617,7 @@
             to { opacity: 1; }
         }
 
-        #whatsNew .wn-card {
+        #whatsNew .wn-card , #batchPopup .wn-card {
             position: relative;
             width: 100%;
             max-width: 400px;
@@ -636,7 +636,7 @@
             to { opacity: 1; transform: none; }
         }
 
-        #whatsNew .wn-x {
+        #whatsNew .wn-x , #batchPopup .wn-x {
             position: absolute;
             top: 8px;
             right: 8px;
@@ -653,17 +653,17 @@
             border-radius: 50%;
         }
 
-        #whatsNew .wn-x:active {
+        #whatsNew .wn-x:active , #batchPopup .wn-x:active {
             opacity: 1;
             background: rgba(255, 255, 255, .1);
         }
 
-        #whatsNew .wn-x svg {
+        #whatsNew .wn-x svg , #batchPopup .wn-x svg {
             width: 18px;
             height: 18px;
         }
 
-        #whatsNew .wn-tag {
+        #whatsNew .wn-tag , #batchPopup .wn-tag {
             font-family: var(--mono);
             font-size: 10.5px;
             letter-spacing: .08em;
@@ -672,7 +672,7 @@
             margin: 0 0 6px;
         }
 
-        #whatsNew h3 {
+        #whatsNew h3 , #batchPopup h3 {
             font-family: var(--serif);
             font-size: 21px;
             font-weight: 700;
@@ -680,19 +680,19 @@
             letter-spacing: -0.01em;
         }
 
-        #whatsNew ul {
+        #whatsNew ul , #batchPopup ul {
             margin: 0 0 20px;
             padding: 0 0 0 18px;
             font-size: 14px;
             line-height: 1.5;
         }
 
-        #whatsNew li {
+        #whatsNew li , #batchPopup li {
             margin-bottom: 9px;
             opacity: .92;
         }
 
-        #whatsNew .wn-close {
+        #whatsNew .wn-close , #batchPopup .wn-close {
             display: block;
             margin: 0 auto;
             background: var(--amber);
@@ -706,7 +706,7 @@
             cursor: pointer;
         }
 
-        #whatsNew .wn-close:active {
+        #whatsNew .wn-close:active , #batchPopup .wn-close:active {
             background: var(--amber-2);
         }
         
@@ -1037,7 +1037,7 @@
                 <div class="stat-card" style="margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
                     <div>
                         <div class="num" id="homeDueCount">0</div>
-                        <div class="lbl">Dnes na opakovanie</div>
+                        <div class="lbl">Otázok na teba čaká</div>
                     </div>
                     <button class="btn btn-amber" style="width:auto; padding:11px 16px;" onclick="goTo('repeat')">Opakovať</button>
                 </div>
@@ -1231,18 +1231,32 @@
             <!-- OPAKOVANIE -->
             <section class="view" id="view-repeat">
                 <h2 class="section-title">Opakovanie</h2>
-                <p class="section-desc">Zle zodpovedané otázky sa vracajú častejšie, zvládnuté zriedkavejšie.</p>
-                <div class="stat-grid">
-                    <div class="stat-card">
-                        <div class="num" id="repeatDue">0</div>
-                        <div class="lbl">Na opakovanie</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="num" id="repeatMastered">0</div>
-                        <div class="lbl">Zvládnuté</div>
-                    </div>
+                <p class="section-desc">Nekonečný feed: najprv otázky, ktoré si pokazil, potom tie, ktoré je čas zopakovať, a nové. Chémia a biológia sú pomiešané. Po každej stovke uvidíš výsledok.</p>
+                <div class="stat-card" style="text-align:center; margin-bottom:12px; padding:22px 14px;">
+                    <div class="num" id="repeatBig" style="font-size:48px;">100</div>
+                    <div class="lbl">otázok na teba čaká</div>
+                    <div id="repeatBreakdown" style="font-size:12.5px; opacity:.7; margin-top:10px; line-height:1.5;"></div>
                 </div>
-                <button class="btn btn-primary" id="repeatStartBtn" onclick="startRepeat()">Spustiť opakovanie</button>
+                <button class="btn btn-primary" id="repeatStartBtn" onclick="startRepeat()">Spustiť</button>
+
+                <details style="margin-top:16px;">
+                    <summary style="cursor:pointer; font-size:13px; font-weight:600; padding:6px 0;">Okruhy na opakovanie: <span id="repeatScopeSummary">všetky</span></summary>
+                    <p style="font-size:12.5px; opacity:.65; margin:6px 0 12px; line-height:1.5;">Vyber okruhy, ktorým sa práve venuješ — feed bude brať otázky len z nich. Nič nevybrané = všetky okruhy. Ak vyberieš okruhy len v jednom predmete, druhý sa vynechá.</p>
+                    <div class="field">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <label style="margin:0;">Chémia</label>
+                            <button type="button" class="btn btn-ghost" id="repeatAllChem" style="width:auto; padding:5px 10px; font-size:12px;" onclick="toggleRepeatSubject('chemia')">vybrať všetky</button>
+                        </div>
+                        <div class="chip-row" id="repeatChipsChem"></div>
+                    </div>
+                    <div class="field">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <label style="margin:0;">Biológia</label>
+                            <button type="button" class="btn btn-ghost" id="repeatAllBio" style="width:auto; padding:5px 10px; font-size:12px;" onclick="toggleRepeatSubject('biologia')">vybrať všetky</button>
+                        </div>
+                        <div class="chip-row" id="repeatChipsBio"></div>
+                    </div>
+                </details>
                 <div class="field" style="margin-top:26px; border-top:1px solid var(--line); padding-top:18px;">
                     <label>Slabé témy</label>
                     <p style="font-size:12.5px; opacity:.65; margin:0 0 10px; line-height:1.5;">Najslabšie témy podľa tvojich odpovedí. Ťuknutím spustíš test z danej témy.</p>
@@ -1586,7 +1600,7 @@
             document.getElementById('homeTotalTests').textContent = history.length;
             const wrongCount = Object.values(perQStats).filter(s => s.lastResult === false).length;
             document.getElementById('homeWrongCount').textContent = wrongCount;
-            document.getElementById('homeDueCount').textContent = dueQuestions().length;
+            document.getElementById('homeDueCount').textContent = repeatBatchSize();
             if (history.length) {
                 const avg = Math.round(history.reduce((a, h) => a + h.pct, 0) / history.length);
                 document.getElementById('homeAccuracy').textContent = avg + '%';
@@ -2087,7 +2101,7 @@ function checkAnswer(){
   perQStats[q._uid] = perQStats[q._uid] || {correctCount:0, wrongCount:0};
   if(isCorrect) perQStats[q._uid].correctCount++; else perQStats[q._uid].wrongCount++;
   perQStats[q._uid].lastResult = isCorrect;
-  leitnerUpdate(perQStats[q._uid], isCorrect);
+  sm2Update(perQStats[q._uid], isCorrect);
   savePerQStats(perQStats);
 
   // Zaznamenaj otázku do prehľadu, ktorý sa zobrazí vo vyhodnotení testu.
@@ -2142,6 +2156,7 @@ function finishQuiz(){
   const subjectLabel = sessionSubjects.size>1 ? 'oboje' : (sessionSubjects.values().next().value || 'all');
   history.push({ date: new Date().toISOString(), correct:s.correct, wrong:s.wrong, points:s.points, maxPoints:s.maxPoints, pct, subject:subjectLabel, isOstry: !!s.isOstry, timeMs: s.elapsedMs });
   saveHistory(history);
+  if(s.mode === 'repeat'){ showBatchPopup(s, pct); return; }
 
   document.getElementById('summaryCorrect').textContent = s.correct;
   document.getElementById('summaryWrong').textContent = s.wrong;
@@ -2501,59 +2516,177 @@ function setTheme(mode){
 }
 if(darkMQ && darkMQ.addEventListener) darkMQ.addEventListener('change', applyTheme);
 
-/* ============ OPAKOVANIE (Leitner), SLABÉ TÉMY, HVIEZDIČKY ============ */
-// Boxy 1–5: zlá odpoveď vráti otázku do boxu 1, správna ju posunie vyššie.
-// Interval (v dňoch) do ďalšieho opakovania podľa boxu.
-const LEITNER_DAYS = [0, 0, 1, 3, 7, 14];
+/* ============ OPAKOVANIE (SM-2), SLABÉ TÉMY, HVIEZDIČKY ============ */
+// Opakovanie podľa algoritmu SM-2 (SuperMemo) + pravidlo "zle zodpovedané idú
+// na začiatok, kým ich neodpovieš správne".
+// Každá otázka si pamätá: ef (ľahkosť, 2.5 → min 1.3), reps (správne odpovede
+// po sebe), ivl (interval v dňoch) a due (kedy je na rade).
 const DAY_MS = 86400000;
-const REPEAT_BATCH = 20; // koľko otázok sa zopakuje v jednom kole
+const BATCH = 100;      // veľkosť jedného kola feedu
+const EF_START = 2.5, EF_MIN = 1.3;
 
-function leitnerUpdate(st, ok){
-  st.box = ok ? Math.min(5, (st.box || 1) + 1) : 1;
-  st.due = Date.now() + LEITNER_DAYS[st.box] * DAY_MS;
+function sm2Update(st, ok){
+  if(ok){
+    // Správna odpoveď = kvalita 4 (v SM-2 sa ľahkosť nemení).
+    st.reps = (st.reps || 0) + 1;
+    st.ivl = st.reps === 1 ? 1 : st.reps === 2 ? 6 : Math.round((st.ivl || 6) * (st.ef || EF_START));
+    st.due = Date.now() + st.ivl * DAY_MS;
+  } else {
+    // Chyba: opakovanie od začiatku a otázka sa stáva "ťažšou" (ef klesne).
+    st.ef = Math.max(EF_MIN, (st.ef || EF_START) - 0.2);
+    st.reps = 0;
+    st.ivl = 0;
+    st.due = 0;
+  }
 }
 
-// Staré štatistiky (bez boxov) sa jednorazovo zaradia: zle → box 1 hneď,
-// správne → box 2 (opakovanie o deň).
-function migrateLeitner(){
+// Jednorazový prechod zo starých dát (aj z predošlých boxov) na SM-2.
+function migrateSRS(){
   let changed = false;
   Object.values(perQStats).forEach(st=>{
-    if(st.box === undefined){
-      st.box = st.lastResult === false ? 1 : 2;
-      st.due = st.lastResult === false ? 0 : Date.now() + LEITNER_DAYS[2] * DAY_MS;
-      changed = true;
-    }
+    if(st.ef !== undefined) return;
+    const ok = st.lastResult !== false;
+    const reps = st.box ? Math.max(0, st.box - 1) : (ok ? 1 : 0);
+    st.ef = EF_START;
+    st.reps = ok ? reps : 0;
+    st.ivl = st.reps === 0 ? 0 : st.reps === 1 ? 1 : Math.round(6 * Math.pow(EF_START, st.reps - 2));
+    if(st.due === undefined) st.due = ok ? Date.now() + DAY_MS : 0;
+    if(!ok) st.due = 0;
+    delete st.box;
+    changed = true;
   });
   if(changed) savePerQStats(perQStats);
 }
 
-function dueQuestions(){
+// Okruhy, ktorým sa práve venuješ (kľúče "chemia:atom", "biologia:rastliny", ...).
+// Prázdny výber = všetky okruhy.
+const REPEAT_SEC_KEY = 'quiz_repeat_sections';
+function loadRepeatSections(){
+  try{ return new Set(JSON.parse(localStorage.getItem(REPEAT_SEC_KEY)) || []); }catch(e){ return new Set(); }
+}
+let repeatSections = loadRepeatSections();
+function saveRepeatSections(){
+  try{ localStorage.setItem(REPEAT_SEC_KEY, JSON.stringify(Array.from(repeatSections))); }catch(e){}
+}
+function inRepeatScope(q){
+  if(!repeatSections.size) return true;
+  return (q._sections || []).some(sec=>repeatSections.has(sectionKey(q.subject, sec.id)));
+}
+function toggleRepeatSubject(subject){
+  const keys = SECTIONS_BY_SUBJECT[subject].map(sec=>sectionKey(subject, sec.id));
+  const all = keys.every(k=>repeatSections.has(k));
+  keys.forEach(k=>{ if(all) repeatSections.delete(k); else repeatSections.add(k); });
+  saveRepeatSections();
+  renderRepeat();
+}
+function renderRepeatScope(){
+  [['chemia','repeatChipsChem','repeatAllChem'], ['biologia','repeatChipsBio','repeatAllBio']].forEach(([subject, chipsId, allId])=>{
+    const wrap = document.getElementById(chipsId);
+    wrap.innerHTML = SECTIONS_BY_SUBJECT[subject].map(sec=>{
+      const key = sectionKey(subject, sec.id);
+      const n = questions.filter(q=>q.subject === subject && q._hasAnswer && (q._sections || []).some(x=>x.id === sec.id)).length;
+      return `<div class="chip ${repeatSections.has(key) ? 'selected' : ''}" data-key="${key}">${sec.label} <span style="opacity:.6; font-family:var(--mono); font-size:11px;">(${n})</span></div>`;
+    }).join('');
+    wrap.querySelectorAll('.chip').forEach(c=>{
+      c.onclick = ()=>{
+        const k = c.dataset.key;
+        if(repeatSections.has(k)) repeatSections.delete(k); else repeatSections.add(k);
+        saveRepeatSections();
+        renderRepeat();
+      };
+    });
+    const allSel = SECTIONS_BY_SUBJECT[subject].every(sec=>repeatSections.has(sectionKey(subject, sec.id)));
+    document.getElementById(allId).textContent = allSel ? 'zrušiť výber' : 'vybrať všetky';
+  });
+  document.getElementById('repeatScopeSummary').textContent = repeatSections.size ? `${repeatSections.size} vybrané` : 'všetky';
+}
+
+// Zostaví jedno kolo feedu (max BATCH otázok, chémia + biológia pomiešané):
+// 1. zle zodpovedané (na začiatku), 2. tie, ktorým uplynul termín,
+// 3. nové, 4. najbližšie na rade — aby feed nikdy nezostal prázdny.
+function buildFeed(){
   const now = Date.now();
-  return questions
-    .filter(q=>{ const st = perQStats[q._uid]; return q._hasAnswer && st && st.due !== undefined && st.due <= now; })
-    .sort((a,b)=>{ const x = perQStats[a._uid], y = perQStats[b._uid]; return (x.box - y.box) || (x.due - y.due); });
+  const failed = [], due = [], fresh = [], later = [];
+  questions.forEach(q=>{
+    if(!q._hasAnswer || !inRepeatScope(q)) return;
+    const st = perQStats[q._uid];
+    if(!st || (st.correctCount + st.wrongCount) === 0) fresh.push(q);
+    else if(st.lastResult === false) failed.push(q);
+    else if((st.due || 0) <= now) due.push(q);
+    else later.push(q);
+  });
+  const byDue = (a,b)=> (perQStats[a._uid].due || 0) - (perQStats[b._uid].due || 0);
+  due.sort(byDue);
+  later.sort(byDue);
+  const head = shuffle(failed).slice(0, BATCH);
+  const rest = due.concat(shuffle(fresh), later).slice(0, BATCH - head.length);
+  const dueSet = new Set(due), freshSet = new Set(fresh);
+  return {
+    items: head.concat(shuffle(rest)),
+    nFailed: head.length,
+    nDue: rest.filter(q=>dueSet.has(q)).length,
+    nFresh: rest.filter(q=>freshSet.has(q)).length
+  };
+}
+
+function repeatBatchSize(){
+  return Math.min(BATCH, questions.filter(q=>q._hasAnswer && inRepeatScope(q)).length);
 }
 
 // Spoločný štart testu z hotového zoznamu otázok.
-function launchQuiz(pool){
+function launchQuiz(pool, mode){
   if(!pool.length){ alert('Žiadne otázky na zobrazenie.'); return; }
   if(setupState.optionsMode === 'random4') pool = pool.map(q => pickRandomOptionsSubset(q, 4));
-  quizSession = { items: pool, idx:0, correct:0, wrong:0, points:0, maxPoints:0, answered:false, selected:new Set(), startTs: Date.now(), timerInterval:null };
+  quizSession = { items: pool, idx:0, correct:0, wrong:0, points:0, maxPoints:0, answered:false, selected:new Set(), startTs: Date.now(), timerInterval:null, mode: mode || null };
   goTo('quiz');
   renderQuizQuestion();
   startQuizTimer();
 }
 
-function startRepeat(){ launchQuiz(dueQuestions().slice(0, REPEAT_BATCH)); }
+function startRepeat(){ launchQuiz(buildFeed().items, 'repeat'); }
 
 function renderRepeat(){
-  const due = dueQuestions().length;
-  document.getElementById('repeatDue').textContent = due;
-  document.getElementById('repeatMastered').textContent = Object.values(perQStats).filter(s=>s.box >= 4).length;
+  renderRepeatScope();
+  const f = buildFeed();
+  document.getElementById('repeatBig').textContent = f.items.length;
+  const parts = [];
+  if(f.nFailed) parts.push(`${f.nFailed} na opravu`);
+  if(f.nDue) parts.push(`${f.nDue} na zopakovanie`);
+  if(f.nFresh) parts.push(`${f.nFresh} nových`);
+  document.getElementById('repeatBreakdown').textContent = parts.join(' · ');
   const btn = document.getElementById('repeatStartBtn');
-  btn.disabled = !due;
-  btn.textContent = due ? `Spustiť opakovanie (${Math.min(due, REPEAT_BATCH)})` : 'Dnes nič na opakovanie';
+  btn.disabled = !f.items.length;
+  btn.textContent = f.items.length ? 'Spustiť' : 'Nie sú žiadne otázky';
   renderWeakTopics();
+}
+
+// Okno s výsledkom po každej odpracovanej stovke.
+function showBatchPopup(s, pct){
+  if(document.getElementById('batchPopup')) return;
+  const next = repeatBatchSize();
+  const wrap = document.createElement('div');
+  wrap.id = 'batchPopup';
+  wrap.setAttribute('role', 'dialog');
+  wrap.setAttribute('aria-modal', 'true');
+  wrap.innerHTML = `
+    <div class="wn-card" style="text-align:center;">
+      <button type="button" class="wn-x" data-act="end" aria-label="Skončiť">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <p class="wn-tag">Kolo hotové</p>
+      <div style="font-family:var(--mono); font-size:54px; font-weight:600; line-height:1; margin:12px 0 8px;">${pct} %</div>
+      <p style="margin:0 0 20px; font-size:14px; opacity:.9;">${s.correct} správne · ${s.wrong} nesprávne z ${s.items.length}</p>
+      <button type="button" class="wn-close" data-act="next">Ďalších ${next} otázok</button>
+      <button type="button" data-act="end" style="display:block; margin:14px auto 0; background:none; border:none; color:var(--on-dark); opacity:.7; font-size:13px; text-decoration:underline; cursor:pointer;">Skončiť</button>
+    </div>`;
+  document.body.appendChild(wrap);
+  wrap.querySelectorAll('[data-act]').forEach(b=>{
+    b.onclick = ()=>{
+      const next = b.dataset.act === 'next';
+      wrap.remove();
+      if(next) startRepeat(); else goTo('repeat');
+    };
+  });
 }
 
 function renderWeakTopics(){
@@ -2633,15 +2766,14 @@ function startStarred(){
 // Pri každej novej verzii zmeň 'id' a prepíš 'items' — okno sa ukáže každému
 // používateľovi jednorazovo, kým ho nezavrie (krížik alebo "Zavrieť").
 const WHATS_NEW = {
-  id: '2026-11-18c',
+  id: '2026-11-18e',
   title: 'Čo je nové',
   items: [
     'Tmavý režim: v Štatistiky → Nastavenia → Vzhľad vyberieš svetlú, tmavú alebo podľa systému.',
-    'Nová záložka „Opakovanie“: zle zodpovedané otázky sa vracajú častejšie, zvládnuté zriedkavejšie. Počet otázok na dnes vidíš aj na domovskej obrazovke.',
+    'Opakovanie je nekonečný feed: po každých 100 otázkach (chémia a biológia pomiešané) uvidíš výsledok a môžeš pokračovať ďalšou stovkou. Najprv idú otázky, ktoré si pokazil, potom tie, ktoré je čas zopakovať (algoritmus SM-2), a nové. Okruhy, ktorým sa práve venuješ, si nastavíš v záložke Opakovanie.',
     'Slabé témy: v záložke Opakovanie vidíš témy s najnižšou úspešnosťou a ťuknutím spustíš test z nich.',
     'Hviezdička ★ v rohu otázky: označené otázky nájdeš v záložke Otázky a môžeš z nich spustiť test.',
-    'Nové nastavenie „Zamknúť označenú odpoveď“ — ako na reálnom teste: keď označíš možnosť, už ju nejde odznačiť. Nájdeš ho v Štatistiky → Nastavenia (predvolene je vypnuté).',
-    'Po každej aktualizácii appky sa ukáže toto okno s novinkami.'
+    'Nastavenie „Zamknúť označenú odpoveď“ nájdeš v Štatistiky → Nastavenia.'
   ]
 };
 const WHATS_NEW_KEY = 'quiz_whats_new_seen';
@@ -2704,7 +2836,7 @@ function showWhatsNew(){
 /* ============ INIT ============ */
 applyTheme();
 renderThemeChips();
-migrateLeitner();
+migrateSRS();
 renderHome();
 renderQuizSetup();
 renderShowQIdSwitch();

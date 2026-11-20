@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zapisnik-cache-v10.2';
+const CACHE_NAME = 'zapisnik-cache-v10.3';
 // pepíš update v index.html pre pop-up
 //const WHATS_NEW = {
 const ASSETS = [
